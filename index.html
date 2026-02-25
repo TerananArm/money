@@ -558,9 +558,18 @@
                     } else {
                         // คนทั่วไป: ใช้ฐาน 8.5 ชม. (510 นาที)
                         // รายได้ = นาทีที่ทำ * (ค่าแรงรายวัน / 510)
-                        let dailyPay = workedMins * (baseRate / 510);
-                        totalSalary += Math.max(0, dailyPay);
-                        totalDeduction += Math.max(0, baseRate - dailyPay);
+                        let rawDailyPay = workedMins * (baseRate / 510);
+                        let rawDeduction = baseRate - rawDailyPay;
+
+                        let actualDeduction = 0;
+                        if (rawDeduction > 0) {
+                            // ถ้ามีการหัก ให้หักขั้นต่ำ 50 บาท
+                            actualDeduction = Math.max(50, rawDeduction);
+                        }
+
+                        let actualDailyPay = baseRate - actualDeduction;
+                        totalSalary += Math.max(0, actualDailyPay);
+                        totalDeduction += actualDeduction;
                     }
                 });
 
@@ -639,9 +648,17 @@
                 if (isArm) {
                     totalSalary += workedMins * (50 / 60);
                 } else {
-                    let dailyPay = workedMins * (newWage / 510);
-                    totalSalary += Math.max(0, dailyPay);
-                    totalDeduction += Math.max(0, newWage - dailyPay);
+                    let rawDailyPay = workedMins * (newWage / 510);
+                    let rawDeduction = newWage - rawDailyPay;
+
+                    let actualDeduction = 0;
+                    if (rawDeduction > 0) {
+                        actualDeduction = Math.max(50, rawDeduction);
+                    }
+
+                    let actualDailyPay = newWage - actualDeduction;
+                    totalSalary += Math.max(0, actualDailyPay);
+                    totalDeduction += actualDeduction;
                 }
             });
 
