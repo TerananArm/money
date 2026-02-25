@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคำนวณเงินเดือน & เวลาทำงาน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+
+        /* ซ่อนลูกศรใน input number */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        /* สไตล์สำหรับตาราง */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* เฉพาะเวลาสั่งพิมพ์ (Print) */
+        @media print {
+            body {
+                background-color: white;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-full-width {
+                grid-column: span 12 / span 12 !important;
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+            }
+
+            .table-container {
+                max-height: none !important;
+                overflow: visible !important;
+            }
+
+            th {
+                background-color: #f1f5f9 !important;
+                color: #000 !important;
+                -webkit-print-color-adjust: exact;
+            }
+
+            .no-print-input {
+                display: none !important;
+            }
+
+            .print-only {
+                display: inline !important;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header (Navbar) -->
+    <header class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800 tracking-tight">ระบบคำนวณเงินเดือน</h1>
+                    <p class="text-xs text-slate-500 font-medium">เข้างาน 07:30 น.</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col gap-6">
+
+        <!-- Step 1: Upload Section (Top, Full Width) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 no-print transition-all hover:shadow-md">
+            <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span
+                    class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span>
+                นำเข้าไฟล์เวลาสแกน (Excel)
+            </h2>
+            <div
+                class="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100 dashed">
+                <div class="flex-1 w-full relative">
+                    <input type="file" id="excelFile" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-slate-500
+                        file:mr-4 file:py-2.5 file:px-6
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-600 file:text-white
+                        hover:file:bg-blue-700 hover:file:shadow-md
+                        file:cursor-pointer transition-all file:transition-all
+                        bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500
+                    " />
+                </div>
+                <button id="processBtn"
+                    class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-8 rounded-lg transition-all shadow-sm w-full md:w-auto flex items-center justify-center gap-2 disabled:opacity-70">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>คำนวณเงินเดือน</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2-Column Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+            <!-- Left Column: Master List (Settings) -->
+            <div
+                class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-28 no-print">
+                <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                        <span
+                            class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
+                        ฐานข้อมูลพนักงาน
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="resetMasterList()"
+                            class="text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+                            title="คืนค่าเริ่มต้น">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                        <button onclick="addEmployeeUI()"
+                            class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v16m8-8H4" />
+                            </svg>
+                            เพิ่ม
+                        </button>
+                    </div>
+                </div>
+
+                <div class="max-h-[500px] overflow-y-auto custom-scrollbar p-2">
+                    <table class="min-w-full text-sm">
+                        <thead class="text-xs text-slate-400 uppercase tracking-wider bg-white sticky top-0 z-10">
+                            <tr>
+                                <th class="px-3 py-2 text-left font-medium">ชื่อพนักงาน</th>
+                                <th class="px-3 py-2 text-right font-medium">ค่าแรง</th>
+                                <th class="px-2 py-2 text-center font-medium w-10"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="masterListContainer" class="divide-y divide-slate-50">
+                            <!-- รายชื่อจะถูกสร้างที่นี่ -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-amber-50 p-3 text-xs text-amber-700 border-t border-amber-100 flex gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>ออกงาน16:00</p>
+                </div>
+            </div>
+
+            <!-- Right Column: Results Dashboard -->
+            <div id="resultSection"
+                class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col print-full-width min-h-[400px]">
+
+                <!-- Empty State (แสดงตอนยังไม่อัปโหลดไฟล์) -->
+                <div id="emptyState"
+                    class="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 no-print">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 text-slate-200" fill="none"
+                        viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p class="text-lg font-medium text-slate-500">ยังไม่มีข้อมูลการคำนวณ</p>
+                    <p class="text-sm mt-1">อัปโหลดไฟล์ Excel ที่ขั้นตอนที่ 1 เพื่อดูผลลัพธ์</p>
+                </div>
+
+                <!-- Result Content (ซ่อนตอนแรก) -->
+                <div id="resultContent" class="hidden flex-col h-full">
+                    <div
+                        class="p-5 border-b border-slate-200 bg-white flex justify-between items-center sticky top-0 z-20">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span
+                                class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm no-print">3</span>
+                            สรุปยอดเงินเดือน
+                        </h2>
+                        <button onclick="window.print()"
+                            class="no-print bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            พิมพ์เอกสาร
+                        </button>
+                    </div>
+
+                    <div class="table-container custom-scrollbar flex-1 p-0 m-0">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
+                                        รายชื่อ</th>
+                                    <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
+                                        ค่าแรงรายวัน</th>
+                                    <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
+                                        เวลาทำ (นาที)</th>
+                                    <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap">หัก
+                                        (฿)</th>
+                                    <th
+                                        class="px-5 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap">
+                                        ได้รับ (฿)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultTableBody" class="bg-white divide-y divide-slate-100">
+                                <!-- ผลลัพธ์จะแสดงที่นี่ -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // ข้อมูลพนักงานตั้งต้น
+        const initialEmployees = [
+            { name: "Mr Don", wage: 420 },
+            { name: "P.Cha", wage: 630 },
+            { name: "P.Cream", wage: 420 },
+            { name: "Tor", wage: 350 },
+            { name: "KO SOE", wage: 367.5 },
+            { name: "P.Muss", wage: 472.5 },
+            { name: "Ko Ki", wage: 420 },
+            { name: "Golf", wage: 420 },
+            { name: "Aung", wage: 367.5 },
+            { name: "Nge Nge", wage: 367.5 },
+            { name: "P. TUM", wage: 525 },
+            { name: "P. Sek", wage: 525 },
+            { name: "ArLi", wage: 367.5 },
+            { name: "nammon", wage: 350 },
+            { name: "Ye Htet", wage: 367.5 },
+            { name: "Mg Kyaw มอจอ", wage: 367.5 },
+            { name: "Sai", wage: 350 },
+            { name: "พ.เสริฐ", wage: 525 },
+            { name: "เฉิน", wage: 420 },
+            { name: "Arm", wage: 50 } // Arm ล็อคไว้เป็นรายชั่วโมง
+        ];
+
+        const TARGET_HOUR = 7;
+        const TARGET_MIN = 30;
+        const END_HOUR = 16;
+        const END_MIN = 0;
+
+        let savedWagesList = JSON.parse(localStorage.getItem('payrollMasterList'));
+        if (!savedWagesList || savedWagesList.length === 0) {
+            savedWagesList = initialEmployees;
+            saveMasterList();
+        }
+
+        // --- ส่วนจัดการฝั่งซ้าย (Master List) ---
+        function saveMasterList() {
+            localStorage.setItem('payrollMasterList', JSON.stringify(savedWagesList));
+        }
+
+        window.resetMasterList = function () {
+            if (confirm("ต้องการล้างข้อมูลและคืนค่าเริ่มต้นตามรูปภาพใช่หรือไม่?")) {
+                savedWagesList = [...initialEmployees];
+                saveMasterList();
+                renderMasterList();
+            }
+        };
+
+        function renderMasterList() {
+            const container = document.getElementById('masterListContainer');
+            container.innerHTML = '';
+            savedWagesList.forEach((emp, index) => {
+                let isArm = emp.name.toLowerCase() === 'arm';
+                container.innerHTML += `
+                <tr class="hover:bg-blue-50/50 transition-colors group">
+                    <td class="px-3 py-2 relative">
+                        <input type="text" value="${emp.name}" onchange="updateEmpName(${index}, this.value)" 
+                               class="w-full border border-transparent group-hover:border-slate-200 focus:border-blue-500 rounded-md px-2 py-1.5 bg-transparent focus:bg-white text-slate-700 font-medium text-sm transition-all ${isArm ? 'pointer-events-none' : ''}" 
+                               ${isArm ? 'readonly' : ''}>
+                        ${isArm ? '<span class="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.5 rounded">ราย ชม.</span>' : ''}
+                    </td>
+                    <td class="px-3 py-2">
+                        <div class="flex items-center justify-end bg-transparent group-hover:bg-white border border-transparent group-hover:border-slate-200 focus-within:bg-white rounded-md overflow-hidden focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+                            <input type="number" value="${emp.wage}" onchange="updateEmpWage(${index}, this.value)" 
+                                   class="w-16 text-right px-2 py-1.5 outline-none text-blue-600 font-semibold text-sm bg-transparent" ${isArm ? 'readonly' : ''}>
+                        </div>
+                    </td>
+                    <td class="px-2 py-2 text-center">
+                        ${!isArm
+                        ? `<button onclick="removeEmployee(${index})" class="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md p-1.5 transition-colors opacity-0 group-hover:opacity-100" title="ลบพนักงาน">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                               </button>`
+                        : ``}
+                    </td>
+                </tr>
+            `;
+            });
+        }
+
+        window.updateEmpName = function (idx, val) { savedWagesList[idx].name = val.trim(); saveMasterList(); };
+        window.updateEmpWage = function (idx, val) { savedWagesList[idx].wage = parseFloat(val) || 0; saveMasterList(); };
+        window.removeEmployee = function (idx) {
+            if (confirm(`ต้องการลบ ${savedWagesList[idx].name} ออกจากฐานข้อมูลใช่หรือไม่?`)) {
+                savedWagesList.splice(idx, 1);
+                saveMasterList();
+                renderMasterList();
+            }
+        };
+        window.addEmployeeUI = function () {
+            savedWagesList.push({ name: "พนักงานใหม่", wage: 350 });
+            saveMasterList();
+            renderMasterList();
+            const container = document.getElementById('masterListContainer').parentElement.parentElement;
+            container.scrollTop = container.scrollHeight;
+        };
+
+        renderMasterList();
+
+        // --- ส่วนประมวลผล (Right Column) ---
+        document.getElementById('processBtn').addEventListener('click', function () {
+            const fileInput = document.getElementById('excelFile');
+            if (!fileInput.files.length) {
+                alert('กรุณาเลือกไฟล์ Excel ก่อนครับ');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            const btn = document.getElementById('processBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> กำลังคำนวณ...';
+            btn.disabled = true;
+
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                try {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    let employeeData = parseExcelData(rows);
+                    if (employeeData) {
+                        calculatePayroll(employeeData);
+                    }
+                } catch (err) {
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์');
+                    console.error(err);
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function extractTimesFromCell(cell) {
+            let times = [];
+            if (cell === undefined || cell === null || cell === "") return times;
+
+            if (typeof cell === 'number') {
+                // Excel stores time as a fraction of a day (0.0 to 0.999...)
+                if (cell < 1) {
+                    let totalMins = Math.round(cell * 24 * 60);
+                    times.push({ h: Math.floor(totalMins / 60), m: totalMins % 60 });
+                } else {
+                    // Some formats might store as 7.30 (float) or 730 (int)
+                    let cellStr = String(cell);
+                    if (cellStr.includes('.')) {
+                        let [hStr, mStr] = cellStr.split('.');
+                        if (mStr.length === 1) mStr += '0'; // Handle 7.3 as 7:30
+                        times.push({ h: parseInt(hStr, 10), m: parseInt(mStr, 10) });
+                    } else if (cellStr.length >= 3) {
+                        // Handle 730 or 1230
+                        let h = parseInt(cellStr.slice(0, -2), 10);
+                        let m = parseInt(cellStr.slice(-2), 10);
+                        if (m < 60) times.push({ h, m });
+                    }
+                }
+            } else if (typeof cell === 'string') {
+                let parts = cell.split(/\s+|,|\n/);
+                parts.forEach(p => {
+                    p = p.trim();
+                    if (p.includes(':')) {
+                        let [hStr, mStr] = p.split(':');
+                        times.push({ h: parseInt(hStr, 10), m: parseInt(mStr, 10) });
+                    } else if (!isNaN(parseFloat(p)) && p.includes('.')) {
+                        let [hStr, mStr] = p.split('.');
+                        times.push({ h: parseInt(hStr, 10), m: parseInt(mStr, 10) });
+                    }
+                });
+            }
+
+            times.sort((a, b) => (a.h * 60 + a.m) - (b.h * 60 + b.m));
+            return times;
+        }
+
+        function parseExcelData(rows) {
+            let nameColIndex = -1;
+            let dateColumns = [];
+
+            for (let i = 0; i < Math.min(rows.length, 10); i++) {
+                if (!rows[i]) continue;
+                for (let j = 0; j < rows[i].length; j++) {
+                    let val = String(rows[i][j] || '').trim();
+                    let lowerVal = val.toLowerCase();
+                    if (nameColIndex === -1 && (lowerVal === 'name' || val === 'ชื่อ' || val === 'พนักงาน' || lowerVal === 'staff' || lowerVal === 'employee')) {
+                        nameColIndex = j;
+                    }
+                    if (/^\d{2}[-/]\d{2}$/.test(val)) {
+                        dateColumns.push({ colIndex: j, dateStr: val });
+                    }
+                }
+            }
+
+            if (nameColIndex === -1 || dateColumns.length === 0) {
+                alert("ไม่พบโครงสร้างข้อมูล (ต้องมีคอลัมน์ 'Name/ชื่อ' และวันที่)");
+                return null;
+            }
+
+            let extractedData = [];
+            let listNeedsUpdate = false;
+
+            for (let i = 0; i < rows.length; i++) {
+                let name = rows[i][nameColIndex];
+                if (!name || typeof name !== 'string') continue;
+                name = name.trim();
+
+                if (name === '' || name.toLowerCase() === 'name' || name === 'ชื่อ' || name.includes('รวม') || name === 'OT') continue;
+
+                let empRecord = { name: name, workDays: [] };
+
+                dateColumns.forEach(dc => {
+                    let cellData = rows[i][dc.colIndex];
+                    let times = extractTimesFromCell(cellData);
+                    if (times.length > 0) {
+                        empRecord.workDays.push({ date: dc.dateStr, times: times });
+                    }
+                });
+
+                if (empRecord.workDays.length > 0) {
+                    extractedData.push(empRecord);
+
+                    let existingMaster = savedWagesList.find(e => e.name.toLowerCase() === name.toLowerCase());
+
+                    // ถ้ามีรายชื่อใหม่ที่หลุดเข้ามาและยังไม่มีในฐานข้อมูลฝั่งซ้าย
+                    if (!existingMaster) {
+                        // กำหนดค่าตั้งต้นให้คนใหม่ (ถ้าชื่อ arm ให้ 50, คนอื่นให้ 350) 
+                        // สามารถไปแก้ตัวเลขทีหลังในหน้าเว็บได้เลย
+                        let newWage = (name.toLowerCase() === 'arm') ? 50 : 350;
+                        savedWagesList.push({ name: name, wage: newWage });
+                        listNeedsUpdate = true;
+                    }
+                }
+            }
+
+            if (listNeedsUpdate) {
+                saveMasterList();
+                renderMasterList();
+            }
+
+            return extractedData;
+        }
+
+        function calculatePayroll(employeeData) {
+            window.currentParsedData = employeeData; // บันทึกข้อมูลไว้คำนวณสด
+            const tbody = document.getElementById('resultTableBody');
+            tbody.innerHTML = '';
+
+            let wageMap = {};
+            savedWagesList.forEach(e => { wageMap[e.name.toLowerCase()] = e.wage; });
+
+            employeeData.forEach((emp, empIdx) => {
+                let totalSalary = 0;
+                let totalWorkUnits = 0;
+                let totalDeduction = 0;
+
+                let isArm = (emp.name.toLowerCase() === 'arm');
+                let baseRate = wageMap[emp.name.toLowerCase()] || 0;
+
+                emp.workDays.forEach(day => {
+                    let firstTime = day.times[0];
+                    let lastTime = day.times[day.times.length - 1];
+
+                    // ปรับเวลาเข้า-ออกตามเงื่อนไข
+                    let startMins, endMins;
+
+                    if (isArm) {
+                        // Arm: ไม่สนใจ 07:30/16:00 นับตามเวลาที่แสกนจริง
+                        startMins = (firstTime.h * 60) + firstTime.m;
+                        // ถ้าไม่มีแสกนออก ให้ถือว่าเป็น 16:00 (หรือตามที่มี)
+                        endMins = (day.times.length > 1) ? (lastTime.h * 60) + lastTime.m : 960;
+                    } else {
+                        // คนทั่วไป: ปัดเข้า 07:30 ปัดออก 16:00
+                        startMins = Math.max((firstTime.h * 60) + firstTime.m, 450); // 450 คือ 07:30
+                        endMins = 960; // 960 คือ 16:00
+                        if (day.times.length > 1) {
+                            endMins = Math.min((lastTime.h * 60) + lastTime.m, 960);
+                        }
+                    }
+
+                    let workedMins = endMins - startMins;
+                    if (workedMins < 0) workedMins = 0;
+                    totalWorkUnits += workedMins;
+
+                    if (isArm) {
+                        // Arm: ชม. ละ 50 บาท (นาทีละ 50/60)
+                        totalSalary += workedMins * (50 / 60);
+                    } else {
+                        // คนทั่วไป: ใช้ฐาน 8.5 ชม. (510 นาที)
+                        // รายได้ = นาทีที่ทำ * (ค่าแรงรายวัน / 510)
+                        let dailyPay = workedMins * (baseRate / 510);
+                        totalSalary += Math.max(0, dailyPay);
+                        totalDeduction += Math.max(0, baseRate - dailyPay);
+                    }
+                });
+
+                let unitText = `${totalWorkUnits.toFixed(0)} <span class="text-slate-400 font-normal text-xs ml-0.5">นาที</span>`;
+
+                let rateInputHtml = `
+                <div class="inline-flex items-center justify-end bg-white border border-slate-300 hover:border-blue-400 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-200 rounded-md overflow-hidden transition-all shadow-sm no-print-input">
+                    <input type="number" value="${baseRate}" 
+                        oninput="liveUpdateWage(${empIdx}, this)"
+                        class="w-16 text-right px-2 py-1 outline-none text-blue-700 font-bold bg-transparent">
+                    <span class="text-slate-500 bg-slate-50 border-l border-slate-200 px-1 py-1 text-[10px]">/${isArm ? 'ชม.' : 'วัน'}</span>
+                </div>
+                <span id="print-rate-${empIdx}" class="hidden print-only text-slate-800 font-bold">${baseRate} /${isArm ? 'ชม.' : 'วัน'}</span>
+            `;
+
+                let row = `
+                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+                    <td class="px-5 py-3 whitespace-nowrap font-medium text-slate-800">${emp.name}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-right font-medium">${rateInputHtml}</td>
+                    <td class="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-700">${unitText}</td>
+                    <td id="deduction-${empIdx}" class="px-3 py-3 whitespace-nowrap text-right text-red-500 font-medium">
+                        ${isArm ? '-' : totalDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td id="net-salary-${empIdx}" class="px-5 py-3 whitespace-nowrap text-right text-green-600 font-bold text-lg bg-green-50/30">
+                        ${totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                </tr>
+            `;
+                tbody.innerHTML += row;
+            });
+
+            // สลับหน้าจอให้แสดงผลลัพธ์
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('resultContent').classList.remove('hidden');
+            document.getElementById('resultContent').classList.add('flex');
+        }
+
+        // เพิ่มฟังก์ชันอัปเดตค่าแรงแบบ Real-time บนตารางขวา
+        window.liveUpdateWage = function (empIdx, inputEl) {
+            let newWage = parseFloat(inputEl.value) || 0;
+            let emp = window.currentParsedData[empIdx];
+            let empName = emp.name.toLowerCase();
+            let isArm = (empName === 'arm');
+
+            // 1. อัปเดตข้อมูลฝั่งซ้ายเงียบๆ เผื่อจำไว้ใช้รอบหน้า
+            let masterEmp = savedWagesList.find(e => e.name.toLowerCase() === empName);
+            if (masterEmp) {
+                masterEmp.wage = newWage;
+                saveMasterList();
+                renderMasterList();
+            }
+
+            // 2. คำนวณยอดเงินสุทธิใหม่ทันที
+            let totalSalary = 0;
+
+            let totalDeduction = 0;
+            emp.workDays.forEach(day => {
+                let firstTime = day.times[0];
+                let lastTime = day.times[day.times.length - 1];
+
+                let startMins, endMins;
+                if (isArm) {
+                    startMins = (firstTime.h * 60) + firstTime.m;
+                    endMins = (day.times.length > 1) ? (lastTime.h * 60) + lastTime.m : 960;
+                } else {
+                    startMins = Math.max((firstTime.h * 60) + firstTime.m, 450);
+                    endMins = 960;
+                    if (day.times.length > 1) {
+                        endMins = Math.min((lastTime.h * 60) + lastTime.m, 960);
+                    }
+                }
+
+                let workedMins = endMins - startMins;
+                if (workedMins < 0) workedMins = 0;
+
+                if (isArm) {
+                    totalSalary += workedMins * (50 / 60);
+                } else {
+                    let dailyPay = workedMins * (newWage / 510);
+                    totalSalary += Math.max(0, dailyPay);
+                    totalDeduction += Math.max(0, newWage - dailyPay);
+                }
+            });
+
+            // 3. อัปเดตตัวหนังสือสำหรับโหมดพิมพ์ (Print)
+            let printTextEl = document.getElementById(`print-rate-${empIdx}`);
+            if (printTextEl) printTextEl.innerText = `${newWage} /${isArm ? 'ชม.' : 'วัน'}`;
+
+            // 4. แสดงยอดสุทธิและค่าหักใหม่บนหน้าจอทันที
+            let deduceCell = document.getElementById(`deduction-${empIdx}`);
+            if (deduceCell) deduceCell.innerText = isArm ? '-' : totalDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            let netCell = document.getElementById(`net-salary-${empIdx}`);
+            if (netCell) netCell.innerText = totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
+    </script>
+
+</body>
+
+</html>
