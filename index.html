@@ -534,6 +534,60 @@
             return extractedData;
         }
 
+
+        function computeEmployeePay(emp, baseRate) {
+            let result = { totalSalary: 0, totalWorkUnits: 0, totalDeduction: 0, dailyDetails: [] };
+            let isArm = (emp.name.toLowerCase() === 'arm');
+            emp.workDays.forEach((day, dayIdx) => {
+                let firstTime = day.times[0]; let lastTime = day.times[day.times.length - 1];
+                let isOT = day.isOT || false; let startMins, endMins;
+                if (isArm) {
+                    startMins = (firstTime.h * 60) + firstTime.m;
+                    endMins = (day.times.length > 1) ? (lastTime.h * 60) + lastTime.m : 960;
+                } else {
+                    startMins = Math.max((firstTime.h * 60) + firstTime.m, 450);
+                    let actualLastTimeMins = (day.times.length > 1) ? (lastTime.h * 60) + lastTime.m : 960;
+                    if (isOT) endMins = actualLastTimeMins; else endMins = Math.min(actualLastTimeMins, 960);
+                }
+                let workedMins = endMins - startMins;
+                if (workedMins < 0) workedMins = 0;
+                result.totalWorkUnits += workedMins;
+                let dayPay = 0, dayDeduction = 0, otPay = 0;
+                if (isArm) {
+                    dayPay = workedMins * (50 / 60);
+                    result.totalSalary += dayPay;
+                } else {
+                    let effectiveWorkedMins = workedMins;
+                    let rawPay = effectiveWorkedMins * (baseRate / 510);
+                    let rawDeduction = baseRate - rawPay;
+                    
+                    if (rawDeduction > 0) {
+                        dayDeduction = Math.max(50, rawDeduction);
+                    } else {
+                        dayDeduction = 0;
+                    }
+                    
+                    if (rawDeduction > 0) {
+                        dayPay = baseRate - dayDeduction;
+                    } else {
+                        dayPay = rawPay;
+                    }
+                    
+                    result.totalSalary += Math.max(0, dayPay);
+                    result.totalDeduction += dayDeduction;
+                }
+                result.dailyDetails.push({
+                    date: day.date, isOT: isOT,
+                    scanIn: String(firstTime.h).padStart(2, '0') + ':' + String(firstTime.m).padStart(2, '0'),
+                    scanOut: (day.times.length > 1) ? String(lastTime.h).padStart(2, '0') + ':' + String(lastTime.m).padStart(2, '0') : '-',
+                    roundedIn: Math.floor(startMins / 60).toString().padStart(2, '0') + ':' + (startMins % 60).toString().padStart(2, '0'),
+                    roundedOut: Math.floor(endMins / 60).toString().padStart(2, '0') + ':' + (endMins % 60).toString().padStart(2, '0'),
+                    mins: workedMins, deduction: dayDeduction, pay: dayPay
+                });
+            });
+            return result;
+        }
+
         function calculatePayroll(employeeData) {
             window.currentParsedData = employeeData; // บันทึกข้อมูลไว้คำนวณสด
             const tbody = document.getElementById('resultTableBody');
@@ -543,73 +597,12 @@
             savedWagesList.forEach(e => { wageMap[e.name.toLowerCase()] = e.wage; });
 
             employeeData.forEach((emp, empIdx) => {
-                let totalSalary = 0;
-                let totalWorkUnits = 0;
-                let totalDeduction = 0;
+                let calcResult = computeEmployeePay(emp, baseRate);
+                let totalSalary = calcResult.totalSalary;
+                let totalWorkUnits = calcResult.totalWorkUnits;
+                let totalDeduction = calcResult.totalDeduction;
 
-                let isArm = (emp.name.toLowerCase() === 'arm');
-                let baseRate = wageMap[emp.name.toLowerCase()] || 0;
-
-                let dailyDetails = [];
-
-                emp.workDays.forEach(day => {
-                    let firstTime = day.times[0];
-                    let lastTime = day.times[day.times.length - 1];
-
-                    // ปรับเวลาเข้า-ออกตามเงื่อนไข
-                    let startMins, endMins;
-
-                    if (isArm) {
-                        // Arm: ไม่สนใจ 07:30/16:00 นับตามเวลาที่แสกนจริง
-                        startMins = (firstTime.h * 60) + firstTime.m;
-                        // ถ้าไม่มีแสกนออก ให้ถือว่าเป็น 16:00 (หรือตามที่มี)
-                        endMins = (day.times.length > 1) ? (lastTime.h * 60) + lastTime.m : 960;
-                    } else {
-                        // คนทั่วไป: ปัดเข้า 07:30 ปัดออก 16:00
-                        startMins = Math.max((firstTime.h * 60) + firstTime.m, 450); // 450 คือ 07:30
-                        endMins = 960; // 960 คือ 16:00
-                        if (day.times.length > 1) {
-                            endMins = Math.min((lastTime.h * 60) + lastTime.m, 960);
-                        }
-                    }
-
-                    let workedMins = endMins - startMins;
-                    if (workedMins < 0) workedMins = 0;
-                    totalWorkUnits += workedMins;
-
-                    let dayPay = 0;
-                    let dayDeduction = 0;
-
-                    if (isArm) {
-                        // Arm: ชม. ละ 50 บาท (นาทีละ 50/60)
-                        dayPay = workedMins * (50 / 60);
-                        totalSalary += dayPay;
-                    } else {
-                        // คนทั่วไป: ใช้ฐาน 8.5 ชม. (510 นาที)
-                        let rawDailyPay = workedMins * (baseRate / 510);
-                        let rawDeduction = baseRate - rawDailyPay;
-
-                        if (rawDeduction > 0) {
-                            dayDeduction = Math.max(50, rawDeduction);
-                        }
-                        dayPay = baseRate - dayDeduction;
-                        totalSalary += Math.max(0, dayPay);
-                        totalDeduction += dayDeduction;
-                    }
-
-                    dailyDetails.push({
-                        date: day.date,
-                        scanIn: `${String(firstTime.h).padStart(2, '0')}:${String(firstTime.m).padStart(2, '0')}`,
-                        scanOut: (day.times.length > 1) ? `${String(lastTime.h).padStart(2, '0')}:${String(lastTime.m).padStart(2, '0')}` : '-',
-                        roundedIn: `${Math.floor(startMins / 60).toString().padStart(2, '0')}:${(startMins % 60).toString().padStart(2, '0')}`,
-                        roundedOut: `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}`,
-                        mins: workedMins,
-                        deduction: dayDeduction,
-                        pay: dayPay
-                    });
-                });
-
-                emp.calculationDetails = dailyDetails; // เก็บไว้แสดง Modal
+                emp.calculationDetails = calcResult.dailyDetails; // เก็บไว้แสดง Modal
 
                 let otherDeductNote = emp.otherDeductNote || "";
                 let otherDeductAmount = emp.otherDeductAmount || 0;
@@ -631,7 +624,7 @@
                 <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 print:border-slate-200">
                     <td class="px-5 py-3 whitespace-nowrap font-medium text-slate-800">${emp.name}</td>
                     <td class="px-3 py-3 whitespace-nowrap text-right font-medium">${rateInputHtml}</td>
-                    <td class="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-700">${unitText}</td>
+                    <td id="work-units-${empIdx}" class="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-700">${unitText}</td>
                     <td id="deduction-${empIdx}" class="px-3 py-3 whitespace-nowrap text-right text-red-500 font-medium">
                         ${isArm ? '-' : totalDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
@@ -694,55 +687,10 @@
             }
 
             // 2. คำนวณยอดเงินสุทธิใหม่ทันที
-            let totalSalary = 0;
-
-            let totalDeduction = 0;
-            emp.workDays.forEach((day, dayIdx) => {
-                let firstTime = day.times[0];
-                let lastTime = day.times[day.times.length - 1];
-
-                let startMins, endMins;
-                if (isArm) {
-                    startMins = (firstTime.h * 60) + firstTime.m;
-                    endMins = (day.times.length > 1) ? (lastTime.h * 60) + lastTime.m : 960;
-                } else {
-                    startMins = Math.max((firstTime.h * 60) + firstTime.m, 450);
-                    endMins = 960;
-                    if (day.times.length > 1) {
-                        endMins = Math.min((lastTime.h * 60) + lastTime.m, 960);
-                    }
-                }
-
-                let workedMins = endMins - startMins;
-                if (workedMins < 0) workedMins = 0;
-
-                let dayPay = 0; // Initialize dayPay here
-                let dayDeduction = 0; // Initialize dayDeduction here
-
-                if (isArm) {
-                    dayPay = workedMins * (50 / 60);
-                    totalSalary += dayPay;
-                } else {
-                    let rawDailyPay = workedMins * (newWage / 510);
-                    let rawDeduction = newWage - rawDailyPay;
-
-                    let actualDeduction = 0;
-                    if (rawDeduction > 0) {
-                        actualDeduction = Math.max(50, rawDeduction);
-                    }
-
-                    let actualDailyPay = newWage - actualDeduction;
-                    dayPay = actualDailyPay; // Assign to dayPay
-                    totalSalary += Math.max(0, actualDailyPay);
-                    totalDeduction += actualDeduction;
-                }
-
-                // อัปเดตข้อมูลรายละเอียดสำหรับ Modal ด้วย
-                if (emp.calculationDetails && emp.calculationDetails[dayIdx]) {
-                    emp.calculationDetails[dayIdx].pay = dayPay;
-                    emp.calculationDetails[dayIdx].deduction = dayDeduction;
-                }
-            });
+            let calcResult = computeEmployeePay(emp, newWage);
+            emp.calculationDetails = calcResult.dailyDetails;
+            let totalSalary = calcResult.totalSalary;
+            let totalDeduction = calcResult.totalDeduction;
 
             // 3. อัปเดตตัวหนังสือสำหรับโหมดพิมพ์ (Print)
             let printTextEl = document.getElementById(`print-rate-${empIdx}`);
@@ -796,15 +744,58 @@
             if (balanceCell) balanceCell.innerText = finalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
+
+        window.toggleOT = function(empIdx, dayIdx, isChecked) {
+            let emp = window.currentParsedData[empIdx];
+            emp.workDays[dayIdx].isOT = isChecked;
+            
+            let empName = emp.name.toLowerCase();
+            let masterEmp = savedWagesList.find(e => e.name.toLowerCase() === empName);
+            let baseRate = masterEmp ? masterEmp.wage : 0;
+            
+            // Recalculate
+            let calcResult = computeEmployeePay(emp, baseRate);
+            emp.calculationDetails = calcResult.dailyDetails;
+            
+            // Update UI by calling liveUpdateWage logic structure
+            let totalSalary = calcResult.totalSalary;
+            let totalDeduction = calcResult.totalDeduction;
+            
+            let deduceCell = document.getElementById(`deduction-${empIdx}`);
+            if (deduceCell) deduceCell.innerText = empName === 'arm' ? '-' : totalDeduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            let netCell = document.getElementById(`net-salary-${empIdx}`);
+            if (netCell) netCell.innerText = totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            let unitText = `${calcResult.totalWorkUnits.toFixed(0)} <span class="text-slate-400 font-normal text-xs ml-0.5">นาที</span>`;
+            let unitCell = document.getElementById(`work-units-${empIdx}`);
+            if (unitCell) unitCell.innerHTML = unitText;
+            
+            let otherDeductAmount = emp.otherDeductAmount || 0;
+            let finalBalance = totalSalary - otherDeductAmount;
+            let balanceCell = document.getElementById(`final-balance-${empIdx}`);
+            if (balanceCell) balanceCell.innerText = finalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            
+            // refresh modal body
+            showDetails(empIdx);
+        };
+
         window.showDetails = function (empIdx) {
             const emp = window.currentParsedData[empIdx];
             document.getElementById('modalName').innerText = emp.name;
             const modalBody = document.getElementById('modalBody');
             modalBody.innerHTML = '';
 
-            emp.calculationDetails.forEach(det => {
+            emp.calculationDetails.forEach((det, dayIdx) => {
                 let row = `
                     <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                        <td class="py-3 px-2 text-center text-slate-600 font-medium whitespace-nowrap">
+                            <label class="inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="form-checkbox h-4 w-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500" 
+                                       ${det.isOT ? 'checked' : ''}
+                                       onchange="toggleOT(${empIdx}, ${dayIdx}, this.checked)">
+                            </label>
+                        </td>
                         <td class="py-3 text-slate-600 font-medium">${det.date}</td>
                         <td class="py-3 text-right text-slate-500">${det.scanIn}</td>
                         <td class="py-3 text-right text-slate-500">${det.scanOut}</td>
@@ -868,6 +859,7 @@
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="text-slate-500 border-b border-slate-200">
+                            <th class="py-2 text-center font-semibold w-12">OT</th>
                             <th class="py-2 text-left font-semibold">วันที่</th>
                             <th class="py-2 text-right font-semibold">แสกนเข้า</th>
                             <th class="py-2 text-right font-semibold">แสกนออก</th>
