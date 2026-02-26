@@ -585,6 +585,7 @@
                         roundedIn: `${Math.floor(startMins / 60).toString().padStart(2, '0')}:${(startMins % 60).toString().padStart(2, '0')}`,
                         roundedOut: `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}`,
                         mins: workedMins,
+                        deduction: dayDeduction,
                         pay: dayPay
                     });
                 });
@@ -692,6 +693,7 @@
                 // อัปเดตข้อมูลรายละเอียดสำหรับ Modal ด้วย
                 if (emp.calculationDetails && emp.calculationDetails[dayIdx]) {
                     emp.calculationDetails[dayIdx].pay = dayPay;
+                    emp.calculationDetails[dayIdx].deduction = dayDeduction;
                 }
             });
 
@@ -722,6 +724,7 @@
                         <td class="py-3 text-right text-blue-600 bg-blue-50/30 font-medium">${det.roundedIn}</td>
                         <td class="py-3 text-right text-blue-600 bg-blue-50/30 font-medium">${det.roundedOut}</td>
                         <td class="py-3 text-right font-bold text-slate-700">${det.mins}</td>
+                        <td class="py-3 text-right font-medium text-red-500">${det.deduction > 0 ? det.deduction.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</td>
                         <td class="py-3 text-right font-bold text-green-600">${det.pay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     </tr>
                 `;
@@ -774,6 +777,7 @@
                             <th class="py-2 text-right font-semibold">ปัดเข้า</th>
                             <th class="py-2 text-right font-semibold">ปัดออก</th>
                             <th class="py-2 text-right font-semibold">นาที</th>
+                            <th class="py-2 text-right font-semibold text-red-500">หัก (฿)</th>
                             <th class="py-2 text-right font-bold text-slate-700">ได้รับ (฿)</th>
                         </tr>
                     </thead>
