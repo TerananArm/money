@@ -54,6 +54,11 @@
 
         /* เฉพาะเวลาสั่งพิมพ์ (Print) */
         @media print {
+            @page {
+                size: landscape;
+                margin: 10mm;
+            }
+
             body {
                 background-color: white;
             }
@@ -236,15 +241,22 @@
                                 class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm no-print">3</span>
                             สรุปยอดเงินเดือน
                         </h2>
-                        <button onclick="window.print()"
-                            class="no-print bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                            </svg>
-                            พิมพ์เอกสาร
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="exportToExcel()"
+                                class="no-print bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                                <i class="fas fa-file-excel"></i>
+                                Export Excel
+                            </button>
+                            <button onclick="window.print()"
+                                class="no-print bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                </svg>
+                                พิมพ์เอกสาร
+                            </button>
+                        </div>
                     </div>
                     <div class="print-only hidden pt-6 pb-4">
                         <h2 class="text-2xl font-bold text-center text-slate-800">รายงานสรุปเงินเดือน</h2>
@@ -825,6 +837,63 @@
             setTimeout(() => {
                 document.getElementById('detailsModal').classList.add('hidden');
             }, 200);
+        };
+
+        window.exportToExcel = function () {
+            if (!window.currentParsedData || window.currentParsedData.length === 0) {
+                alert("ไม่มีข้อมูลสำหรับ Export");
+                return;
+            }
+
+            let exportData = [
+                ["รายชื่อ", "ค่าแรงรายวัน", "เวลาทำ (นาที)", "หัก (฿)", "ได้รับ (฿)", "หักเพิ่ม (เหตุผล)", "หักเพิ่ม (ยอดเงิน)", "คงเหลือ (฿)"]
+            ];
+
+            window.currentParsedData.forEach((emp, empIdx) => {
+                let empName = emp.name.toLowerCase();
+                let isArm = (empName === 'arm');
+                let masterEmp = savedWagesList.find(e => e.name.toLowerCase() === empName);
+                let baseRate = masterEmp ? masterEmp.wage : 0;
+
+                let calcResult = computeEmployeePay(emp, baseRate);
+                let totalSalary = calcResult.totalSalary;
+                let totalWorkUnits = calcResult.totalWorkUnits;
+                let totalDeduction = calcResult.totalDeduction;
+
+                let otherDeductNote = emp.otherDeductNote || "";
+                let otherDeductAmount = emp.otherDeductAmount || 0;
+                let finalBalance = totalSalary - otherDeductAmount;
+
+                exportData.push([
+                    emp.name,
+                    baseRate + (isArm ? " /ชม." : " /วัน"),
+                    totalWorkUnits.toFixed(0),
+                    isArm ? 0 : totalDeduction,
+                    totalSalary,
+                    otherDeductNote,
+                    otherDeductAmount,
+                    finalBalance
+                ]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+            // Format some columns
+            const wscols = [
+                { wch: 20 }, // ชื่อ
+                { wch: 15 }, // ค่าแรง
+                { wch: 15 }, // เวลา
+                { wch: 10 }, // หัก
+                { wch: 15 }, // ได้รับ
+                { wch: 25 }, // เหตุผล
+                { wch: 15 }, // ยอดหัก
+                { wch: 15 }  // คงเหลือ
+            ];
+            ws['!cols'] = wscols;
+
+            XLSX.utils.book_append_sheet(wb, ws, "Payroll");
+            XLSX.writeFile(wb, "Payroll_Summary.xlsx");
         };
 
         // วันที่สำหรับสั่งพิมพ์
