@@ -583,9 +583,10 @@
                     normalWorkedMins = Math.max(0, endNormal - startMins);
 
                     if (isOT && actualLastTimeMins > 1020) { // 17:00 is 1020 mins
-                        // OT pay starts after 1020 mins (17:00), at 50 THB per hour
+                        // OT pay starts after 1020 mins (17:00), using their normal per-minute rate
                         let otWorkMins = actualLastTimeMins - 1020;
-                        otPay = otWorkMins * (50 / 60);
+                        let normalPerMinuteRate = baseRate / 510; // 510 mins is a normal full day
+                        otPay = otWorkMins * normalPerMinuteRate;
                         workedMins = normalWorkedMins + otWorkMins; // display units only includes normal + OT 
                     } else {
                         workedMins = normalWorkedMins; // display units only normal work time
