@@ -577,26 +577,22 @@
                     dayPay = workedMins * (50 / 60);
                     result.totalSalary += dayPay;
                 } else {
-                    let effectiveWorkedMins = workedMins;
-
                     // Normal pay up to 16:00 (960 mins)
                     let normalWorkedMins = 0;
+                    let endNormal = Math.min(actualLastTimeMins, 960);
+                    normalWorkedMins = Math.max(0, endNormal - startMins);
 
                     if (isOT && actualLastTimeMins > 1020) { // 17:00 is 1020 mins
-                        // Calculate normal work time (capped at 960 if scan out was after 16:00)
-                        let endNormal = Math.min(actualLastTimeMins, 960);
-                        normalWorkedMins = Math.max(0, endNormal - startMins);
-
                         // OT pay starts after 1020 mins (17:00), at 50 THB per hour
                         let otWorkMins = actualLastTimeMins - 1020;
                         otPay = otWorkMins * (50 / 60);
-                    } else if (isOT && actualLastTimeMins <= 1020) {
-                        let endNormal = Math.min(actualLastTimeMins, 960);
-                        normalWorkedMins = Math.max(0, endNormal - startMins);
+                        workedMins = normalWorkedMins + otWorkMins; // display units only includes normal + OT 
+                    } else {
+                        workedMins = normalWorkedMins; // display units only normal work time
                     }
-                    else {
-                        normalWorkedMins = effectiveWorkedMins;
-                    }
+
+                    result.totalWorkUnits -= (endMins - startMins); // remove old logic units
+                    result.totalWorkUnits += workedMins; // add new logic units
 
                     let rawPay = normalWorkedMins * (baseRate / 510);
                     let rawDeduction = baseRate - rawPay;
