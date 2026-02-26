@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
             font-family: 'Prompt', sans-serif;
@@ -252,6 +253,9 @@
                                     <th
                                         class="px-5 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap">
                                         ได้รับ (฿)</th>
+                                    <th
+                                        class="px-4 py-3 text-center font-semibold text-slate-600 whitespace-nowrap no-print-input">
+                                        จัดการ</th>
                                 </tr>
                             </thead>
                             <tbody id="resultTableBody" class="bg-white divide-y divide-slate-100">
@@ -527,6 +531,8 @@
                 let isArm = (emp.name.toLowerCase() === 'arm');
                 let baseRate = wageMap[emp.name.toLowerCase()] || 0;
 
+                let dailyDetails = [];
+
                 emp.workDays.forEach(day => {
                     let firstTime = day.times[0];
                     let lastTime = day.times[day.times.length - 1];
@@ -552,26 +558,38 @@
                     if (workedMins < 0) workedMins = 0;
                     totalWorkUnits += workedMins;
 
+                    let dayPay = 0;
+                    let dayDeduction = 0;
+
                     if (isArm) {
                         // Arm: ชม. ละ 50 บาท (นาทีละ 50/60)
-                        totalSalary += workedMins * (50 / 60);
+                        dayPay = workedMins * (50 / 60);
+                        totalSalary += dayPay;
                     } else {
                         // คนทั่วไป: ใช้ฐาน 8.5 ชม. (510 นาที)
-                        // รายได้ = นาทีที่ทำ * (ค่าแรงรายวัน / 510)
                         let rawDailyPay = workedMins * (baseRate / 510);
                         let rawDeduction = baseRate - rawDailyPay;
 
-                        let actualDeduction = 0;
                         if (rawDeduction > 0) {
-                            // ถ้ามีการหัก ให้หักขั้นต่ำ 50 บาท
-                            actualDeduction = Math.max(50, rawDeduction);
+                            dayDeduction = Math.max(50, rawDeduction);
                         }
-
-                        let actualDailyPay = baseRate - actualDeduction;
-                        totalSalary += Math.max(0, actualDailyPay);
-                        totalDeduction += actualDeduction;
+                        dayPay = baseRate - dayDeduction;
+                        totalSalary += Math.max(0, dayPay);
+                        totalDeduction += dayDeduction;
                     }
+
+                    dailyDetails.push({
+                        date: day.date,
+                        scanIn: `${String(firstTime.h).padStart(2, '0')}:${String(firstTime.m).padStart(2, '0')}`,
+                        scanOut: (day.times.length > 1) ? `${String(lastTime.h).padStart(2, '0')}:${String(lastTime.m).padStart(2, '0')}` : '-',
+                        roundedIn: `${Math.floor(startMins / 60).toString().padStart(2, '0')}:${(startMins % 60).toString().padStart(2, '0')}`,
+                        roundedOut: `${Math.floor(endMins / 60).toString().padStart(2, '0')}:${(endMins % 60).toString().padStart(2, '0')}`,
+                        mins: workedMins,
+                        pay: dayPay
+                    });
                 });
+
+                emp.calculationDetails = dailyDetails; // เก็บไว้แสดง Modal
 
                 let unitText = `${totalWorkUnits.toFixed(0)} <span class="text-slate-400 font-normal text-xs ml-0.5">นาที</span>`;
 
@@ -595,6 +613,11 @@
                     </td>
                     <td id="net-salary-${empIdx}" class="px-5 py-3 whitespace-nowrap text-right text-green-600 font-bold text-lg bg-green-50/30">
                         ${totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-center no-print-input">
+                        <button onclick="showDetails(${empIdx})" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center mx-auto shadow-sm">
+                            <i class="fas fa-file-alt text-xs"></i>
+                        </button>
                     </td>
                 </tr>
             `;
@@ -626,7 +649,7 @@
             let totalSalary = 0;
 
             let totalDeduction = 0;
-            emp.workDays.forEach(day => {
+            emp.workDays.forEach((day, dayIdx) => {
                 let firstTime = day.times[0];
                 let lastTime = day.times[day.times.length - 1];
 
@@ -645,8 +668,12 @@
                 let workedMins = endMins - startMins;
                 if (workedMins < 0) workedMins = 0;
 
+                let dayPay = 0; // Initialize dayPay here
+                let dayDeduction = 0; // Initialize dayDeduction here
+
                 if (isArm) {
-                    totalSalary += workedMins * (50 / 60);
+                    dayPay = workedMins * (50 / 60);
+                    totalSalary += dayPay;
                 } else {
                     let rawDailyPay = workedMins * (newWage / 510);
                     let rawDeduction = newWage - rawDailyPay;
@@ -657,8 +684,14 @@
                     }
 
                     let actualDailyPay = newWage - actualDeduction;
+                    dayPay = actualDailyPay; // Assign to dayPay
                     totalSalary += Math.max(0, actualDailyPay);
                     totalDeduction += actualDeduction;
+                }
+
+                // อัปเดตข้อมูลรายละเอียดสำหรับ Modal ด้วย
+                if (emp.calculationDetails && emp.calculationDetails[dayIdx]) {
+                    emp.calculationDetails[dayIdx].pay = dayPay;
                 }
             });
 
@@ -674,8 +707,90 @@
             if (netCell) netCell.innerText = totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
+        window.showDetails = function (empIdx) {
+            const emp = window.currentParsedData[empIdx];
+            document.getElementById('modalName').innerText = emp.name;
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = '';
+
+            emp.calculationDetails.forEach(det => {
+                let row = `
+                    <tr class="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                        <td class="py-3 text-slate-600 font-medium">${det.date}</td>
+                        <td class="py-3 text-right text-slate-500">${det.scanIn}</td>
+                        <td class="py-3 text-right text-slate-500">${det.scanOut}</td>
+                        <td class="py-3 text-right text-blue-600 bg-blue-50/30 font-medium">${det.roundedIn}</td>
+                        <td class="py-3 text-right text-blue-600 bg-blue-50/30 font-medium">${det.roundedOut}</td>
+                        <td class="py-3 text-right font-bold text-slate-700">${det.mins}</td>
+                        <td class="py-3 text-right font-bold text-green-600">${det.pay.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    </tr>
+                `;
+                modalBody.innerHTML += row;
+            });
+
+            const modal = document.getElementById('detailsModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('modalContent').classList.remove('scale-95');
+                document.getElementById('modalContent').classList.add('scale-100');
+            }, 10);
+        };
+
+        window.closeModal = function () {
+            document.getElementById('modalContent').classList.add('scale-95');
+            document.getElementById('modalContent').classList.remove('scale-100');
+            setTimeout(() => {
+                document.getElementById('detailsModal').classList.add('hidden');
+            }, 200);
+        };
+
     </script>
+
+    <!-- Modal รายละเอียด -->
+    <div id="detailsModal"
+        class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col scale-95 transition-all duration-300"
+            id="modalContent">
+            <div
+                class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center">
+                    <span class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mr-3">
+                        <i class="fas fa-calendar-alt text-sm"></i>
+                    </span>
+                    รายละเอียดการทำงาน: <span id="modalName" class="ml-2 text-blue-600"></span>
+                </h3>
+                <button onclick="closeModal()"
+                    class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto bg-slate-50/50">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="text-slate-500 border-b border-slate-200">
+                            <th class="py-2 text-left font-semibold">วันที่</th>
+                            <th class="py-2 text-right font-semibold">แสกนเข้า</th>
+                            <th class="py-2 text-right font-semibold">แสกนออก</th>
+                            <th class="py-2 text-right font-semibold">ปัดเข้า</th>
+                            <th class="py-2 text-right font-semibold">ปัดออก</th>
+                            <th class="py-2 text-right font-semibold">นาที</th>
+                            <th class="py-2 text-right font-bold text-slate-700">ได้รับ (฿)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modalBody">
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 bg-white flex justify-end">
+                <button onclick="closeModal()"
+                    class="px-6 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-slate-200">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+        </div>
+    </div>
 
 </body>
 
 </html>
+```
