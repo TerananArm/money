@@ -254,6 +254,12 @@
                                         class="px-5 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap">
                                         ได้รับ (฿)</th>
                                     <th
+                                        class="px-3 py-3 text-left font-semibold text-slate-600 whitespace-nowrap lg:w-48 no-print-input">
+                                        หักเพิ่ม (เหตุผล/ยอด)</th>
+                                    <th
+                                        class="px-5 py-3 text-right font-bold text-blue-700 text-base whitespace-nowrap">
+                                        คงเหลือ (฿)</th>
+                                    <th
                                         class="px-4 py-3 text-center font-semibold text-slate-600 whitespace-nowrap no-print-input">
                                         จัดการ</th>
                                 </tr>
@@ -592,6 +598,10 @@
 
                 emp.calculationDetails = dailyDetails; // เก็บไว้แสดง Modal
 
+                let otherDeductNote = emp.otherDeductNote || "";
+                let otherDeductAmount = emp.otherDeductAmount || 0;
+                let finalBalance = totalSalary - otherDeductAmount;
+
                 let unitText = `${totalWorkUnits.toFixed(0)} <span class="text-slate-400 font-normal text-xs ml-0.5">นาที</span>`;
 
                 let rateInputHtml = `
@@ -614,6 +624,19 @@
                     </td>
                     <td id="net-salary-${empIdx}" class="px-5 py-3 whitespace-nowrap text-right text-green-600 font-bold text-lg bg-green-50/30">
                         ${totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                    <td class="px-3 py-3 whitespace-nowrap no-print-input">
+                        <div class="flex flex-col gap-1">
+                            <input type="text" placeholder="ระบุเหตุผล" value="${otherDeductNote}"
+                                oninput="liveUpdateOtherDeduction(${empIdx}, 'note', this)"
+                                class="w-full text-xs px-2 py-1 border border-slate-200 rounded outline-none focus:border-blue-400">
+                            <input type="number" placeholder="ยอดเงิน" value="${otherDeductAmount}"
+                                oninput="liveUpdateOtherDeduction(${empIdx}, 'amount', this)"
+                                class="w-full text-xs px-2 py-1 border border-slate-200 rounded outline-none focus:border-blue-400 text-right text-red-600 font-medium">
+                        </div>
+                    </td>
+                    <td id="final-balance-${empIdx}" class="px-5 py-3 whitespace-nowrap text-right text-blue-700 font-bold text-xl bg-blue-50/20 shadow-inner">
+                        ${finalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
                     <td class="px-4 py-3 whitespace-nowrap text-center no-print-input">
                         <button onclick="showDetails(${empIdx})" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center mx-auto shadow-sm">
@@ -707,6 +730,33 @@
 
             let netCell = document.getElementById(`net-salary-${empIdx}`);
             if (netCell) netCell.innerText = totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // 5. อัปเดตเงินคงเหลือด้วย (Balance = Net - OtherDebt)
+            let otherDeductAmount = emp.otherDeductAmount || 0;
+            let finalBalance = totalSalary - otherDeductAmount;
+            let balanceCell = document.getElementById(`final-balance-${empIdx}`);
+            if (balanceCell) balanceCell.innerText = finalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        };
+
+        // ฟังก์ชันอัปเดตยอดหักเพิ่มเติม/เหตุผล และยอดคงเหลือสุดท้าย
+        window.liveUpdateOtherDeduction = function (empIdx, type, inputEl) {
+            let emp = window.currentParsedData[empIdx];
+            if (type === 'note') {
+                emp.otherDeductNote = inputEl.value;
+            } else if (type === 'amount') {
+                emp.otherDeductAmount = parseFloat(inputEl.value) || 0;
+            }
+
+            // คำนวณยอด Net Salary ปัจจุบัน (ดึงมาจากที่แสดงผลอยู่)
+            let netSalaryText = document.getElementById(`net-salary-${empIdx}`).innerText.replace(/,/g, '');
+            let netSalary = parseFloat(netSalaryText) || 0;
+
+            // คำนวณคงเหลือ
+            let finalBalance = netSalary - (emp.otherDeductAmount || 0);
+
+            // แสดงผล
+            let balanceCell = document.getElementById(`final-balance-${empIdx}`);
+            if (balanceCell) balanceCell.innerText = finalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         };
 
         window.showDetails = function (empIdx) {
