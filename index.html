@@ -43,6 +43,15 @@
             background: #94a3b8;
         }
 
+        .table-container {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        table {
+            min-width: 900px;
+        }
+
         /* เฉพาะเวลาสั่งพิมพ์ (Print) */
         @media print {
             body {
@@ -76,7 +85,7 @@
             }
 
             .print-only {
-                display: inline !important;
+                display: block !important;
             }
         }
 
@@ -260,7 +269,7 @@
                                         class="px-5 py-3 text-right font-bold text-blue-700 text-base whitespace-nowrap">
                                         คงเหลือ (฿)</th>
                                     <th
-                                        class="px-4 py-3 text-center font-semibold text-slate-600 whitespace-nowrap no-print-input">
+                                        class="px-4 py-3 text-center font-semibold text-slate-600 whitespace-nowrap no-print-input sticky right-0 bg-slate-50 z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] border-l border-slate-200">
                                         จัดการ</th>
                                 </tr>
                             </thead>
@@ -609,13 +618,13 @@
                     <input type="number" value="${baseRate}" 
                         oninput="liveUpdateWage(${empIdx}, this)"
                         class="w-16 text-right px-2 py-1 outline-none text-blue-700 font-bold bg-transparent">
-                    <span class="text-slate-500 bg-slate-50 border-l border-slate-200 px-1 py-1 text-[10px]">/${isArm ? 'ชม.' : 'วัน'}</span>
+                    <span class="text-slate-500 bg-slate-100 border-l border-slate-200 px-1 py-1 text-[10px]">/${isArm ? 'ชม.' : 'วัน'}</span>
                 </div>
-                <span id="print-rate-${empIdx}" class="hidden print-only text-slate-800 font-bold">${baseRate} /${isArm ? 'ชม.' : 'วัน'}</span>
+                <span id="print-rate-${empIdx}" class="hidden print-only text-slate-800 font-bold">${baseRate.toLocaleString()} /${isArm ? 'ชม.' : 'วัน'}</span>
             `;
 
                 let row = `
-                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0">
+                <tr class="hover:bg-slate-50 transition-colors border-b border-slate-100 last:border-0 print:border-slate-200">
                     <td class="px-5 py-3 whitespace-nowrap font-medium text-slate-800">${emp.name}</td>
                     <td class="px-3 py-3 whitespace-nowrap text-right font-medium">${rateInputHtml}</td>
                     <td class="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-700">${unitText}</td>
@@ -625,20 +634,28 @@
                     <td id="net-salary-${empIdx}" class="px-5 py-3 whitespace-nowrap text-right text-green-600 font-bold text-lg bg-green-50/30">
                         ${totalSalary.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td class="px-3 py-3 whitespace-nowrap no-print-input">
-                        <div class="flex flex-col gap-1">
-                            <input type="text" placeholder="ระบุเหตุผล" value="${otherDeductNote}"
-                                oninput="liveUpdateOtherDeduction(${empIdx}, 'note', this)"
-                                class="w-full text-xs px-2 py-1 border border-slate-200 rounded outline-none focus:border-blue-400">
-                            <input type="number" placeholder="ยอดเงิน" value="${otherDeductAmount}"
-                                oninput="liveUpdateOtherDeduction(${empIdx}, 'amount', this)"
-                                class="w-full text-xs px-2 py-1 border border-slate-200 rounded outline-none focus:border-blue-400 text-right text-red-600 font-medium">
+                    <td class="px-3 py-3 whitespace-nowrap">
+                        <div class="no-print-input flex items-center gap-2">
+                            <div class="relative flex-1 w-32">
+                                <input type="text" placeholder="ระบุเหตุผล" value="${otherDeductNote}"
+                                    oninput="liveUpdateOtherDeduction(${empIdx}, 'note', this)"
+                                    class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-md outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all bg-slate-50 focus:bg-white text-slate-600">
+                            </div>
+                            <div class="relative w-20">
+                                <input type="number" placeholder="ยอดเงิน" value="${otherDeductAmount}"
+                                    oninput="liveUpdateOtherDeduction(${empIdx}, 'amount', this)"
+                                    class="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-md outline-none focus:border-red-400 focus:ring-2 focus:ring-red-50 transition-all bg-slate-50 focus:bg-white text-right text-red-600 font-bold">
+                            </div>
+                        </div>
+                        <div class="print-only">
+                            <div id="print-deduct-note-${empIdx}" class="text-[11px] text-slate-500 max-w-[120px] whitespace-normal leading-tight">${otherDeductNote}</div>
+                            <div id="print-deduct-amount-${empIdx}" class="text-xs font-bold text-red-600">${otherDeductAmount > 0 ? '-' + otherDeductAmount.toLocaleString() : ''}</div>
                         </div>
                     </td>
-                    <td id="final-balance-${empIdx}" class="px-5 py-3 whitespace-nowrap text-right text-blue-700 font-bold text-xl bg-blue-50/20 shadow-inner">
+                    <td id="final-balance-${empIdx}" class="px-5 py-3 whitespace-nowrap text-right text-blue-700 font-bold text-xl bg-blue-50/20 shadow-inner print:shadow-none print:bg-transparent">
                         ${finalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-center no-print-input">
+                    <td class="px-4 py-3 whitespace-nowrap text-center no-print-input sticky right-0 bg-white z-10 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] border-l border-slate-50 group-hover:bg-slate-50 transition-colors">
                         <button onclick="showDetails(${empIdx})" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all flex items-center justify-center mx-auto shadow-sm">
                             <i class="fas fa-file-alt text-xs"></i>
                         </button>
@@ -743,8 +760,12 @@
             let emp = window.currentParsedData[empIdx];
             if (type === 'note') {
                 emp.otherDeductNote = inputEl.value;
+                let printNote = document.getElementById(`print-deduct-note-${empIdx}`);
+                if (printNote) printNote.innerText = inputEl.value;
             } else if (type === 'amount') {
                 emp.otherDeductAmount = parseFloat(inputEl.value) || 0;
+                let printAmount = document.getElementById(`print-deduct-amount-${empIdx}`);
+                if (printAmount) printAmount.innerText = emp.otherDeductAmount > 0 ? '-' + emp.otherDeductAmount.toLocaleString() : '';
             }
 
             // คำนวณยอด Net Salary ปัจจุบัน (ดึงมาจากที่แสดงผลอยู่)
