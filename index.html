@@ -1168,7 +1168,7 @@
                             <div class="font-medium mt-1 print-only:mt-0 ${deductLeave > 0 ? 'text-red-500' : 'text-slate-400'}">${deductLeave > 0 ? '-' + deductLeave.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</div>
                         </td>
                         <td class="px-4 py-3 whitespace-nowrap text-right font-bold text-slate-800 bg-slate-100/30">
-                           <span class="${subTotal < 0 ? 'text-red-500' : ''}">${subTotal < 0 ? `(${Math.abs(subTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                           <span class="${subTotal < 0 ? 'text-red-500' : ''}">${subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </td>
                         <td class="px-3 py-3 whitespace-nowrap text-right">
                              <div class="no-print-input flex items-center justify-end gap-1">
@@ -1185,7 +1185,7 @@
                            ${dAmount > 0 ? dAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
                         </td>
                         <td class="px-5 py-3 whitespace-nowrap text-right font-bold text-purple-700 text-lg bg-purple-50/30">
-                             <span class="${finalNet < 0 ? 'text-red-600' : ''}">${finalNet < 0 ? `(${Math.abs(finalNet).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : finalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                             <span class="${finalNet < 0 ? 'text-red-600' : ''}">${finalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                         </td>
                     </tr>
                 `;
@@ -1199,13 +1199,13 @@
             document.getElementById('sum-leave').innerText = sums.leave.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             let stD = document.getElementById('sum-total');
-            stD.innerText = sums.total < 0 ? `(${Math.abs(sums.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : sums.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            stD.innerText = sums.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             stD.className = `px-4 py-4 text-right text-base bg-slate-100/50 ${sums.total < 0 ? 'text-red-600' : 'text-slate-900'}`;
 
             document.getElementById('sum-deduct').innerText = sums.deduct.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
             let sfD = document.getElementById('sum-final');
-            sfD.innerText = sums.final < 0 ? `(${Math.abs(sums.final).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : sums.final.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            sfD.innerText = sums.final.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             sfD.className = `px-5 py-4 text-right text-[18px] bg-purple-100/50 shadow-inner ${sums.final < 0 ? 'text-red-700' : 'text-purple-800'}`;
         }
 
