@@ -688,25 +688,41 @@
 
                 let empRecord = { name: name, workDays: [] };
 
+                // New logic: Auto-calculate late and leave
+                let lateCount = 0;
+                let leaveCount = 0;
+
                 dateColumns.forEach(dc => {
                     let cellData = rows[i][dc.colIndex];
                     let times = extractTimesFromCell(cellData);
                     if (times.length > 0) {
                         empRecord.workDays.push({ date: dc.dateStr, times: times });
+                        // Check if late (after 07:30 = 450 minutes)
+                        let firstTimeMins = (times[0].h * 60) + times[0].m;
+                        if (firstTimeMins > 450) {
+                            lateCount++;
+                        }
+                    } else {
+                        // Empty times, consider as leave for this scheduled column
+                        leaveCount++;
                     }
                 });
 
-                if (empRecord.workDays.length > 0) {
+                if (empRecord.workDays.length > 0 || leaveCount > 0) {
                     extractedData.push(empRecord);
 
                     let existingMaster = savedWagesList.find(e => e.name.toLowerCase() === name.toLowerCase());
 
-                    // ถ้ามีรายชื่อใหม่ที่หลุดเข้ามาและยังไม่มีในฐานข้อมูลฝั่งซ้าย
-                    if (!existingMaster) {
+                    if (existingMaster) {
+                        // Update existing employee with new late/leave counts from Excel
+                        existingMaster.lTime = lateCount;
+                        existingMaster.lvTime = leaveCount;
+                        listNeedsUpdate = true;
+                    } else {
                         // กำหนดค่าตั้งต้นให้คนใหม่ (ถ้าชื่อ arm ให้ 50, คนอื่นให้ 350) 
                         // สามารถไปแก้ตัวเลขทีหลังในหน้าเว็บได้เลย
                         let newWage = (name.toLowerCase() === 'arm') ? 50 : 350;
-                        savedWagesList.push({ name: name, wage: newWage });
+                        savedWagesList.push({ name: name, wage: newWage, lTime: lateCount, lvTime: leaveCount });
                         listNeedsUpdate = true;
                     }
                 }
@@ -1054,33 +1070,30 @@
             thead.innerHTML = `
                             <tr>
                                 <th class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">ชื่อพนักงาน</th>
-                                <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap flex-col flex items-end justify-end justify-items-end justify-self-end text-right h-full">ค่าคอม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">(สูงสุดตามลิมิต)</span></th>
+                                <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap flex-col flex items-end justify-end justify-items-end justify-self-end text-right h-full">ค่าคอม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">สูงสุดตามลิมิต</span></th>
                                 <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">อายุงาน<br>
                                     <div class="inline-flex items-center justify-end gap-1 mt-1 font-normal no-print-input text-[10px]">
-                                        <span class="text-slate-400">(ปีละ</span>
+                                        <span class="text-slate-400">ปีละ</span>
                                         <input type="number" value="${mulTenure}" onchange="liveUpdateCommMultiplier('tenure', this.value)" class="w-10 px-1 py-0.5 border border-slate-200 rounded text-slate-600 text-center focus:outline-none focus:border-purple-400 bg-white">
-                                        <span class="text-slate-400">)</span>
                                     </div>
-                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">(ปีละ ${mulTenure})</span>
+                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">ปีละ ${mulTenure}</span>
                                 </th>
                                 <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">สาย<br>
                                     <div class="inline-flex items-center justify-end gap-1 mt-1 font-normal no-print-input text-[10px]">
-                                        <span class="text-slate-400">(หัก</span>
+                                        <span class="text-slate-400">หัก</span>
                                         <input type="number" value="${mulLate}" onchange="liveUpdateCommMultiplier('late', this.value)" class="w-10 px-1 py-0.5 border border-slate-200 rounded text-slate-600 text-center focus:outline-none focus:border-purple-400 bg-white">
-                                        <span class="text-slate-400">)</span>
                                     </div>
-                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">(หัก ${mulLate})</span>
+                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">หัก ${mulLate}</span>
                                 </th>
                                 <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">ลา<br>
                                     <div class="inline-flex items-center justify-end gap-1 mt-1 font-normal no-print-input text-[10px]">
-                                        <span class="text-slate-400">(หัก</span>
+                                        <span class="text-slate-400">หัก</span>
                                         <input type="number" value="${mulLeave}" onchange="liveUpdateCommMultiplier('leave', this.value)" class="w-10 px-1 py-0.5 border border-slate-200 rounded text-slate-600 text-center focus:outline-none focus:border-purple-400 bg-white">
-                                        <span class="text-slate-400">)</span>
                                     </div>
-                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">(หัก ${mulLeave})</span>
+                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">หัก ${mulLeave}</span>
                                 </th>
-                                <th class="px-4 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap bg-slate-100/50">รวม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">(ก่อนหักเพิ่ม)</span></th>
-                                <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap flex-col flex items-end justify-end justify-items-end justify-self-end text-right h-full">หักเพิ่ม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">(เหตุผล / ยอดเงิน)</span></th>
+                                <th class="px-4 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap bg-slate-100/50">รวม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">ก่อนหักเพิ่ม</span></th>
+                                <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap flex-col flex items-end justify-end justify-items-end justify-self-end text-right h-full">หักเพิ่ม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">เหตุผล / ยอดเงิน</span></th>
                                 <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap border-l border-slate-200">รวมหัก</th>
                                 <th class="px-5 py-3 text-right font-bold text-purple-700 text-base whitespace-nowrap bg-purple-50/50">คงเหลือ</th>
                             </tr>
