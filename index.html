@@ -126,27 +126,43 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-xl font-bold text-slate-800 tracking-tight">ระบบคำนวณเงินเดือน</h1>
-                    <p class="text-xs text-slate-500 font-medium">เข้างาน 07:30 น.</p>
+                    <h1 class="text-xl font-bold text-slate-800 tracking-tight">ระบบการจัดการ</h1>
+                    <p class="text-xs text-slate-500 font-medium">คำนวณเงินเดือน & ค่าคอมมิชชัน</p>
                 </div>
+            </div>
+
+            <!-- Tab Navigation -->
+            <div class="flex bg-slate-100 p-1 rounded-xl">
+                <button onclick="switchTab('salary')" id="tab-btn-salary"
+                    class="px-5 py-2 text-sm font-semibold rounded-lg bg-white text-blue-700 shadow-sm transition-all focus:outline-none">
+                    คิดเงินเดือน
+                </button>
+                <button onclick="switchTab('commission')" id="tab-btn-commission"
+                    class="px-5 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-800 transition-all focus:outline-none">
+                    คิดค่าคอม
+                </button>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col gap-6">
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
 
-        <!-- Step 1: Upload Section (Top, Full Width) -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 no-print transition-all hover:shadow-md">
-            <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span
-                    class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span>
-                นำเข้าไฟล์เวลาสแกน (Excel)
-            </h2>
+        <!-- ======================= SALARY TAB ======================= -->
+        <div id="salary-tab" class="flex flex-col gap-6">
+
+            <!-- Step 1: Upload Section (Top, Full Width) -->
             <div
-                class="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100 dashed">
-                <div class="flex-1 w-full relative">
-                    <input type="file" id="excelFile" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-slate-500
+                class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 no-print transition-all hover:shadow-md">
+                <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span
+                        class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span>
+                    นำเข้าไฟล์เวลาสแกน (Excel)
+                </h2>
+                <div
+                    class="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100 dashed">
+                    <div class="flex-1 w-full relative">
+                        <input type="file" id="excelFile" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-slate-500
                         file:mr-4 file:py-2.5 file:px-6
                         file:rounded-lg file:border-0
                         file:text-sm file:font-semibold
@@ -155,156 +171,298 @@
                         file:cursor-pointer transition-all file:transition-all
                         bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500
                     " />
-                </div>
-                <button id="processBtn"
-                    class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-8 rounded-lg transition-all shadow-sm w-full md:w-auto flex items-center justify-center gap-2 disabled:opacity-70">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>คำนวณเงินเดือน</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- 2-Column Grid Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-
-            <!-- Left Column: Master List (Settings) -->
-            <div
-                class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-28 no-print">
-                <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
-                        <span
-                            class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
-                        ฐานข้อมูลพนักงาน
-                    </h2>
-                    <div class="flex gap-2">
-                        <button onclick="resetMasterList()"
-                            class="text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
-                            title="คืนค่าเริ่มต้น">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                        </button>
-                        <button onclick="addEmployeeUI()"
-                            class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v16m8-8H4" />
-                            </svg>
-                            เพิ่ม
-                        </button>
                     </div>
-                </div>
-
-                <div class="max-h-[500px] overflow-y-auto custom-scrollbar p-2">
-                    <table class="min-w-full text-sm">
-                        <thead class="text-xs text-slate-400 uppercase tracking-wider bg-white sticky top-0 z-10">
-                            <tr>
-                                <th class="px-3 py-2 text-left font-medium">ชื่อพนักงาน</th>
-                                <th class="px-3 py-2 text-right font-medium">ค่าแรง</th>
-                                <th class="px-2 py-2 text-center font-medium w-10"></th>
-                            </tr>
-                        </thead>
-                        <tbody id="masterListContainer" class="divide-y divide-slate-50">
-                            <!-- รายชื่อจะถูกสร้างที่นี่ -->
-                        </tbody>
-                    </table>
+                    <button id="processBtn"
+                        class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-8 rounded-lg transition-all shadow-sm w-full md:w-auto flex items-center justify-center gap-2 disabled:opacity-70">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>คำนวณเงินเดือน</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- Right Column: Results Dashboard -->
-            <div id="resultSection"
-                class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col print-full-width min-h-[400px]">
+            <!-- 2-Column Grid Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-                <!-- Empty State (แสดงตอนยังไม่อัปโหลดไฟล์) -->
-                <div id="emptyState"
-                    class="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 no-print">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 text-slate-200" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <p class="text-lg font-medium text-slate-500">ยังไม่มีข้อมูลการคำนวณ</p>
-                    <p class="text-sm mt-1">อัปโหลดไฟล์ Excel ที่ขั้นตอนที่ 1 เพื่อดูผลลัพธ์</p>
-                </div>
-
-                <!-- Result Content (ซ่อนตอนแรก) -->
-                <div id="resultContent" class="hidden flex-col h-full">
-                    <div
-                        class="p-5 border-b border-slate-200 bg-white flex justify-between items-center sticky top-0 z-20">
-                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <!-- Left Column: Master List (Settings) -->
+                <div
+                    class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden sticky top-28 no-print">
+                    <div class="p-5 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
                             <span
-                                class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm no-print">3</span>
-                            สรุปยอดเงินเดือน
+                                class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
+                            ฐานข้อมูลพนักงาน
                         </h2>
                         <div class="flex gap-2">
-                            <button onclick="exportToExcel()"
-                                class="no-print bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
-                                <i class="fas fa-file-excel"></i>
-                                Export Excel
-                            </button>
-                            <button onclick="window.print()"
-                                class="no-print bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <button onclick="resetMasterList()"
+                                class="text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1"
+                                title="คืนค่าเริ่มต้น">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
-                                พิมพ์เอกสาร
+                            </button>
+                            <button onclick="addEmployeeUI()"
+                                class="text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                                เพิ่ม
                             </button>
                         </div>
                     </div>
-                    <div class="print-only hidden pt-6 pb-4">
-                        <h2 class="text-2xl font-bold text-center text-slate-800">รายงานสรุปเงินเดือน</h2>
-                        <div class="text-center text-sm text-slate-500 mt-1">พิมพ์เมื่อ: <span id="printDate"></span>
-                        </div>
-                    </div>
-                    <div class="table-container custom-scrollbar flex-1 p-0 m-0 print:overflow-visible">
-                        <table class="min-w-full divide-y divide-slate-200 text-sm">
-                            <thead class="bg-slate-50 sticky top-0 z-10">
+
+                    <div class="max-h-[500px] overflow-y-auto custom-scrollbar p-2">
+                        <table class="min-w-full text-sm">
+                            <thead class="text-xs text-slate-400 uppercase tracking-wider bg-white sticky top-0 z-10">
                                 <tr>
-                                    <th class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
-                                        รายชื่อ</th>
-                                    <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
-                                        ค่าแรงรายวัน</th>
-                                    <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
-                                        เวลาทำ (นาที)</th>
-                                    <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap">หัก
-                                        (฿)</th>
-                                    <th
-                                        class="px-5 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap">
-                                        ได้รับ (฿)</th>
-                                    <th
-                                        class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap lg:w-64">
-                                        หักเพิ่ม (เหตุผล / ยอดเงิน)</th>
-                                    <th
-                                        class="px-5 py-3 text-right font-bold text-blue-700 text-base whitespace-nowrap">
-                                        คงเหลือ (฿)</th>
-                                    <th
-                                        class="px-4 py-3 text-center font-semibold text-slate-600 whitespace-nowrap no-print-input sticky right-0 bg-slate-50 z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] border-l border-slate-200">
-                                        จัดการ</th>
+                                    <th class="px-3 py-2 text-left font-medium">ชื่อพนักงาน</th>
+                                    <th class="px-3 py-2 text-right font-medium">ค่าแรง</th>
+                                    <th class="px-2 py-2 text-center font-medium w-10"></th>
                                 </tr>
                             </thead>
-                            <tbody id="resultTableBody" class="bg-white divide-y divide-slate-100">
-                                <!-- ผลลัพธ์จะแสดงที่นี่ -->
+                            <tbody id="masterListContainer" class="divide-y divide-slate-50">
+                                <!-- รายชื่อจะถูกสร้างที่นี่ -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
+                <!-- Right Column: Results Dashboard -->
+                <div id="resultSection"
+                    class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col print-full-width min-h-[400px]">
+
+                    <!-- Empty State (แสดงตอนยังไม่อัปโหลดไฟล์) -->
+                    <div id="emptyState"
+                        class="flex-1 flex flex-col items-center justify-center p-12 text-slate-400 no-print">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 text-slate-200" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <p class="text-lg font-medium text-slate-500">ยังไม่มีข้อมูลการคำนวณ</p>
+                        <p class="text-sm mt-1">อัปโหลดไฟล์ Excel ที่ขั้นตอนที่ 1 เพื่อดูผลลัพธ์</p>
+                    </div>
+
+                    <!-- Result Content (ซ่อนตอนแรก) -->
+                    <div id="resultContent" class="hidden flex-col h-full">
+                        <div
+                            class="p-5 border-b border-slate-200 bg-white flex justify-between items-center sticky top-0 z-20">
+                            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                <span
+                                    class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm no-print">3</span>
+                                สรุปยอดเงินเดือน
+                            </h2>
+                            <div class="flex gap-2">
+                                <button onclick="exportToExcel()"
+                                    class="no-print bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                                    <i class="fas fa-file-excel"></i>
+                                    Export Excel
+                                </button>
+                                <button onclick="window.print()"
+                                    class="no-print bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                                    </svg>
+                                    พิมพ์เอกสาร
+                                </button>
+                            </div>
+                        </div>
+                        <div class="print-only hidden pt-6 pb-4">
+                            <h2 class="text-2xl font-bold text-center text-slate-800">รายงานสรุปเงินเดือน</h2>
+                            <div class="text-center text-sm text-slate-500 mt-1">พิมพ์เมื่อ: <span
+                                    id="printDate"></span>
+                            </div>
+                        </div>
+                        <div class="table-container custom-scrollbar flex-1 p-0 m-0 print:overflow-visible">
+                            <table class="min-w-full divide-y divide-slate-200 text-sm">
+                                <thead class="bg-slate-50 sticky top-0 z-10">
+                                    <tr>
+                                        <th class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">
+                                            รายชื่อ</th>
+                                        <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
+                                            ค่าแรงรายวัน</th>
+                                        <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">
+                                            เวลาทำ (นาที)</th>
+                                        <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap">
+                                            หัก
+                                            (฿)</th>
+                                        <th
+                                            class="px-5 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap">
+                                            ได้รับ (฿)</th>
+                                        <th
+                                            class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap lg:w-64">
+                                            หักเพิ่ม (เหตุผล / ยอดเงิน)</th>
+                                        <th
+                                            class="px-5 py-3 text-right font-bold text-blue-700 text-base whitespace-nowrap">
+                                            คงเหลือ (฿)</th>
+                                        <th
+                                            class="px-4 py-3 text-center font-semibold text-slate-600 whitespace-nowrap no-print-input sticky right-0 bg-slate-50 z-20 shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.05)] border-l border-slate-200">
+                                            จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="resultTableBody" class="bg-white divide-y divide-slate-100">
+                                    <!-- ผลลัพธ์จะแสดงที่นี่ -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
             </div>
-        </div>
+        </div><!-- End of Salary Tab -->
+
+        <!-- ======================= COMMISSION TAB ======================= -->
+        <div id="commission-tab" class="hidden flex-col gap-6">
+
+            <!-- Top Config Section -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 no-print">
+                <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span
+                        class="bg-purple-100 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-sm"><i
+                            class="fas fa-cog"></i></span>
+                    ตั้งค่าพื้นฐาน (คิดค่าคอม)
+                </h2>
+
+                <div class="flex flex-wrap items-end gap-6 bg-slate-50 p-5 rounded-xl border border-slate-100">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">ยอดขาย</label>
+                        <div class="relative">
+                            <input type="number" step="any" id="totalSalesInput" value="0"
+                                oninput="liveUpdateCommConfig()"
+                                class="w-48 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 font-bold text-slate-800 text-right">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-1">เปอร์เซ็นต์ (%)</label>
+                        <div class="relative">
+                            <input type="number" step="0.001" id="percentInput" value="0.025"
+                                oninput="liveUpdateCommConfig()"
+                                class="w-24 px-3 py-2 bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 font-bold text-slate-800 text-center">
+                        </div>
+                    </div>
+                    <div class="flex-1 flex justify-end">
+                        <div
+                            class="text-right bg-purple-100 border border-purple-200 rounded-xl px-6 py-3 min-w-[200px]">
+                            <p class="text-xs font-semibold text-purple-600 uppercase tracking-wider mb-1">
+                                ยอดค่าคอมสุทธิ</p>
+                            <p class="text-2xl font-bold text-purple-800" id="totalCommDisplay">0.00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Commission Data Table -->
+            <div
+                class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col print-full-width min-h-[400px]">
+                <div class="p-5 border-b border-slate-200 bg-white flex justify-between items-center sticky top-0 z-20">
+                    <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <span
+                            class="bg-purple-100 text-purple-700 w-6 h-6 rounded-full flex items-center justify-center text-sm no-print"><i
+                                class="fas fa-table"></i></span>
+                        ตารางคำนวณค่าคอมมิชชัน
+                    </h2>
+                    <div class="flex gap-2">
+                        <button onclick="exportCommissionToExcel()"
+                            class="no-print bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-file-excel"></i>
+                            Export Excel
+                        </button>
+                        <button onclick="window.print()"
+                            class="no-print bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            </svg>
+                            พิมพ์เอกสาร
+                        </button>
+                    </div>
+                </div>
+
+                <div class="print-only hidden pt-6 pb-4">
+                    <h2 class="text-2xl font-bold text-center text-slate-800">รายงานค่าคอมมิชชัน</h2>
+                    <div class="text-center text-sm text-slate-500 mt-1">พิมพ์เมื่อ: <span id="printDateComm"></span>
+                    </div>
+                </div>
+
+                <div class="table-container custom-scrollbar flex-1 p-0 m-0 print:overflow-visible">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50 sticky top-0 z-10">
+                            <!-- Headers dynamically rendered by JS -->
+                        </thead>
+                        <tbody id="commissionTableBody" class="bg-white divide-y divide-slate-100">
+                            <!-- Rows rendered by JS -->
+                        </tbody>
+                        <tfoot class="bg-slate-50 border-t-2 border-slate-200 font-bold text-slate-700 sticky bottom-0">
+                            <tr>
+                                <td class="px-5 py-4 text-center text-base">รวมทั้งหมด</td>
+                                <td class="px-3 py-4 text-right text-base text-slate-800" id="sum-comm">0.00</td>
+                                <td class="px-3 py-4 text-right text-base text-slate-800" id="sum-tenure">0.00</td>
+                                <td class="px-3 py-4 text-right text-base text-red-600" id="sum-late">0.00</td>
+                                <td class="px-3 py-4 text-right text-base text-red-600" id="sum-leave">0.00</td>
+                                <td class="px-4 py-4 text-right text-base text-slate-900 bg-slate-100/50"
+                                    id="sum-total">0.00</td>
+                                <td class="px-3 py-4"></td>
+                                <td class="px-3 py-4 text-right text-base text-red-600 border-l border-slate-200"
+                                    id="sum-deduct">0.00</td>
+                                <td class="px-5 py-4 text-right text-[18px] text-purple-800 bg-purple-100/50 shadow-inner"
+                                    id="sum-final">0.00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- End of Commission Tab -->
+
     </main>
 
     <script>
+        // Tab system
+        function switchTab(tab) {
+            const salaryTab = document.getElementById('salary-tab');
+            const commTab = document.getElementById('commission-tab');
+            const btnSalary = document.getElementById('tab-btn-salary');
+            const btnComm = document.getElementById('tab-btn-commission');
+
+            if (tab === 'salary') {
+                salaryTab.classList.remove('hidden');
+                salaryTab.classList.add('flex');
+                commTab.classList.add('hidden');
+                commTab.classList.remove('flex');
+
+                btnSalary.classList.add('bg-white', 'text-blue-700', 'shadow-sm');
+                btnSalary.classList.remove('text-slate-600', 'hover:text-slate-800');
+
+                btnComm.classList.remove('bg-white', 'text-blue-700', 'shadow-sm');
+                btnComm.classList.add('text-slate-600', 'hover:text-slate-800');
+            } else {
+                salaryTab.classList.add('hidden');
+                salaryTab.classList.remove('flex');
+                commTab.classList.remove('hidden');
+                commTab.classList.add('flex');
+
+                btnComm.classList.add('bg-white', 'text-blue-700', 'shadow-sm');
+                btnComm.classList.remove('text-slate-600', 'hover:text-slate-800');
+
+                btnSalary.classList.remove('bg-white', 'text-blue-700', 'shadow-sm');
+                btnSalary.classList.add('text-slate-600', 'hover:text-slate-800');
+
+                renderCommissionTable();
+            }
+        }
+
         // ข้อมูลพนักงานตั้งต้น
         const initialEmployees = [
             { name: "Mr Don", wage: 420 },
@@ -340,16 +498,26 @@
             saveMasterList();
         }
 
-        // --- ส่วนจัดการฝั่งซ้าย (Master List) ---
+        // Commission Global State
+        let commConfig = JSON.parse(localStorage.getItem('commissionConfig')) || { totalSales: 0, percent: 0.025 };
+
+        // --- ส่วนจัดการฝั่งซ้าย (Master List) และ การตั้งค่า ---
         function saveMasterList() {
             localStorage.setItem('payrollMasterList', JSON.stringify(savedWagesList));
         }
 
+        function saveCommConfig() {
+            localStorage.setItem('commissionConfig', JSON.stringify(commConfig));
+        }
+
         window.resetMasterList = function () {
-            if (confirm("ต้องการล้างข้อมูลและคืนค่าเริ่มต้นตามรูปภาพใช่หรือไม่?")) {
+            if (confirm("ต้องการล้างข้อมูลและคืนค่าเริ่มต้นตามรูปภาพใช่หรือไม่? \n(การคืนค่านี้จะลบข้อมูลที่ตั้งค่าในหน้า คิดค่าคอม ด้วย)")) {
                 savedWagesList = [...initialEmployees];
                 saveMasterList();
                 renderMasterList();
+                if (document.getElementById('commission-tab').classList.contains('flex')) {
+                    renderCommissionTable();
+                }
             }
         };
 
@@ -391,14 +559,16 @@
                 savedWagesList.splice(idx, 1);
                 saveMasterList();
                 renderMasterList();
+                renderCommissionTable(); // Update Comm table too
             }
         };
         window.addEmployeeUI = function () {
-            savedWagesList.push({ name: "พนักงานใหม่", wage: 350 });
+            savedWagesList.push({ name: "พนักงานใหม่", wage: 350, commLimit: 2000, tYears: 0, lTime: 0, lvTime: 0, commDeductNote: '', commDeduct: 0 });
             saveMasterList();
             renderMasterList();
             const container = document.getElementById('masterListContainer').parentElement.parentElement;
             container.scrollTop = container.scrollHeight;
+            renderCommissionTable(); // Update Comm table too
         };
 
         renderMasterList();
@@ -820,6 +990,266 @@
             showDetails(empIdx);
         };
 
+        // ======================= COMMISSION LOGIC =======================
+
+        function getCalculatedTotalCommission() {
+            let s = parseFloat(commConfig.totalSales) || 0;
+            let p = parseFloat(commConfig.percent) || 0;
+            return (s * (p / 100));
+        }
+
+        window.liveUpdateCommConfig = function () {
+            commConfig.totalSales = parseFloat(document.getElementById('totalSalesInput').value) || 0;
+            commConfig.percent = parseFloat(document.getElementById('percentInput').value) || 0;
+            saveCommConfig();
+            renderCommissionTable();
+        };
+
+        window.liveUpdateCommEmp = function (idx, field, val) {
+            let v = parseFloat(val) || 0;
+            // Update master record properties explicitly for Commission 
+            if (field === 'limit') savedWagesList[idx].commLimit = v;
+            if (field === 'tenure') savedWagesList[idx].tYears = v;
+            if (field === 'late') savedWagesList[idx].lTime = v;
+            if (field === 'leave') savedWagesList[idx].lvTime = v;
+            if (field === 'deductAmount') savedWagesList[idx].commDeduct = v;
+            if (field === 'deductNote') savedWagesList[idx].commDeductNote = val;
+
+            saveMasterList();
+            if (field !== 'deductNote') {
+                renderCommissionTable();
+            }
+        };
+
+        window.liveUpdateCommMultiplier = function (field, val) {
+            let v = parseFloat(val) || 0;
+            if (field === 'tenure') commConfig.tenureMultiplier = v;
+            if (field === 'late') commConfig.lateMultiplier = v;
+            if (field === 'leave') commConfig.leaveMultiplier = v;
+            saveCommConfig();
+            renderCommissionTable();
+        };
+
+        function renderCommissionTable() {
+            // Restore config inputs
+            if (document.activeElement !== document.getElementById('totalSalesInput')) {
+                document.getElementById('totalSalesInput').value = commConfig.totalSales || '';
+            }
+            if (document.activeElement !== document.getElementById('percentInput')) {
+                document.getElementById('percentInput').value = commConfig.percent;
+            }
+
+            let totalComm = getCalculatedTotalCommission();
+            document.getElementById('totalCommDisplay').innerText = totalComm.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            // Default multipliers if not set
+            let mulTenure = commConfig.tenureMultiplier !== undefined ? commConfig.tenureMultiplier : 100;
+            let mulLate = commConfig.lateMultiplier !== undefined ? commConfig.lateMultiplier : 200;
+            let mulLeave = commConfig.leaveMultiplier !== undefined ? commConfig.leaveMultiplier : 400;
+
+            const tbody = document.getElementById('commissionTableBody');
+
+            // Build the table header dynamically to insert inputs
+            const thead = document.querySelector('#commission-tab thead');
+            thead.innerHTML = `
+                            <tr>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">ชื่อพนักงาน</th>
+                                <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap flex-col flex items-end justify-end justify-items-end justify-self-end text-right h-full">ค่าคอม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">(สูงสุดตามลิมิต)</span></th>
+                                <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">อายุงาน<br>
+                                    <div class="inline-flex items-center justify-end gap-1 mt-1 font-normal no-print-input text-[10px]">
+                                        <span class="text-slate-400">(ปีละ</span>
+                                        <input type="number" value="${mulTenure}" onchange="liveUpdateCommMultiplier('tenure', this.value)" class="w-10 px-1 py-0.5 border border-slate-200 rounded text-slate-600 text-center focus:outline-none focus:border-purple-400 bg-white">
+                                        <span class="text-slate-400">)</span>
+                                    </div>
+                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">(ปีละ ${mulTenure})</span>
+                                </th>
+                                <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">สาย<br>
+                                    <div class="inline-flex items-center justify-end gap-1 mt-1 font-normal no-print-input text-[10px]">
+                                        <span class="text-slate-400">(หัก</span>
+                                        <input type="number" value="${mulLate}" onchange="liveUpdateCommMultiplier('late', this.value)" class="w-10 px-1 py-0.5 border border-slate-200 rounded text-slate-600 text-center focus:outline-none focus:border-purple-400 bg-white">
+                                        <span class="text-slate-400">)</span>
+                                    </div>
+                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">(หัก ${mulLate})</span>
+                                </th>
+                                <th class="px-3 py-3 text-right font-semibold text-slate-600 whitespace-nowrap">ลา<br>
+                                    <div class="inline-flex items-center justify-end gap-1 mt-1 font-normal no-print-input text-[10px]">
+                                        <span class="text-slate-400">(หัก</span>
+                                        <input type="number" value="${mulLeave}" onchange="liveUpdateCommMultiplier('leave', this.value)" class="w-10 px-1 py-0.5 border border-slate-200 rounded text-slate-600 text-center focus:outline-none focus:border-purple-400 bg-white">
+                                        <span class="text-slate-400">)</span>
+                                    </div>
+                                    <span class="text-[10px] font-normal text-slate-400 mt-1 print-only hidden">(หัก ${mulLeave})</span>
+                                </th>
+                                <th class="px-4 py-3 text-right font-bold text-slate-800 text-base whitespace-nowrap bg-slate-100/50">รวม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">(ก่อนหักเพิ่ม)</span></th>
+                                <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap flex-col flex items-end justify-end justify-items-end justify-self-end text-right h-full">หักเพิ่ม<br><span class="text-[10px] font-normal text-slate-400 mt-1 block">(เหตุผล / ยอดเงิน)</span></th>
+                                <th class="px-3 py-3 text-right font-semibold text-red-500 whitespace-nowrap border-l border-slate-200">รวมหัก</th>
+                                <th class="px-5 py-3 text-right font-bold text-purple-700 text-base whitespace-nowrap bg-purple-50/50">คงเหลือ</th>
+                            </tr>
+            `;
+
+            tbody.innerHTML = '';
+
+            let sums = { comm: 0, tenure: 0, late: 0, leave: 0, total: 0, deduct: 0, final: 0 };
+
+            savedWagesList.forEach((emp, idx) => {
+                let limit = (emp.commLimit === undefined || emp.commLimit === null) ? '' : emp.commLimit; // Empty means no limit visually, but handled as high num via JS
+                let calcLimit = emp.commLimit > 0 ? emp.commLimit : Infinity;
+                let tYears = emp.tYears || 0;
+                let lTime = emp.lTime || 0;
+                let lvTime = emp.lvTime || 0;
+                let dNote = emp.commDeductNote || '';
+                let dAmount = emp.commDeduct || 0;
+
+                // Calculations
+                let actComm = Math.min(totalComm, calcLimit);
+                if (totalComm === 0) actComm = 0; // if 0 sales, 0 comm
+
+                let bonus = tYears * mulTenure;
+                let deductLate = lTime * mulLate;
+                let deductLeave = lvTime * mulLeave;
+
+                let subTotal = actComm + bonus - deductLate - deductLeave;
+                // prevent negative subtotal? Usually yes, depending on policy. Allowing negative initially to match screenshot
+
+                let finalNet = subTotal - dAmount;
+
+                // Sums
+                sums.comm += actComm; sums.tenure += bonus; sums.late += deductLate; sums.leave += deductLeave;
+                sums.total += subTotal; sums.deduct += dAmount; sums.final += finalNet;
+
+                let row = `
+                    <tr class="hover:bg-purple-50/20 transition-colors border-b border-slate-100 print:border-slate-300 group">
+                        <td class="px-5 py-3 whitespace-nowrap font-medium text-slate-800">
+                            ${emp.name}
+                            <div class="mt-1 text-[10px] text-slate-400 font-normal no-print-input flex items-center gap-1">
+                                ลิมิต: 
+                                <input type="number" placeholder="ไม่จำกัด" value="${limit}" onchange="liveUpdateCommEmp(${idx}, 'limit', this.value)" 
+                                    class="w-16 px-1 py-0.5 border border-slate-200 rounded text-slate-600 focus:outline-none focus:border-purple-400">
+                            </div>
+                            <div class="print-only hidden text-[10px] text-slate-500 mt-0.5">ลิมิต: ${limit ? limit : 'ไม่จำกัด'}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right font-medium text-slate-700">
+                            ${actComm.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right text-slate-700">
+                            <div class="flex items-center justify-end gap-2 no-print-input">
+                                <input type="number" value="${tYears || ''}" placeholder="0" onchange="liveUpdateCommEmp(${idx}, 'tenure', this.value)"
+                                    class="w-10 px-1 py-1 bg-slate-50 border border-transparent group-hover:border-slate-200 focus:bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 rounded text-center text-sm">
+                                <span class="text-xs text-slate-400">ปี</span>
+                            </div>
+                            <div class="font-medium mt-1 print-only:mt-0 ${bonus > 0 ? 'text-green-600' : 'text-slate-400'}">${bonus > 0 ? '+' + bonus.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right text-slate-700">
+                            <div class="flex items-center justify-end gap-2 no-print-input">
+                                <input type="number" value="${lTime || ''}" placeholder="0" onchange="liveUpdateCommEmp(${idx}, 'late', this.value)"
+                                    class="w-10 px-1 py-1 bg-slate-50 border border-transparent group-hover:border-slate-200 focus:bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 rounded text-center text-sm">
+                                <span class="text-xs text-slate-400">ครั้ง</span>
+                            </div>
+                            <div class="font-medium mt-1 print-only:mt-0 ${deductLate > 0 ? 'text-red-500' : 'text-slate-400'}">${deductLate > 0 ? '-' + deductLate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right text-slate-700">
+                            <div class="flex items-center justify-end gap-2 no-print-input">
+                                <input type="number" value="${lvTime || ''}" placeholder="0" onchange="liveUpdateCommEmp(${idx}, 'leave', this.value)"
+                                    class="w-10 px-1 py-1 bg-slate-50 border border-transparent group-hover:border-slate-200 focus:bg-white focus:border-purple-400 focus:ring-1 focus:ring-purple-400 rounded text-center text-sm">
+                                <span class="text-xs text-slate-400">ครั้ง</span>
+                            </div>
+                            <div class="font-medium mt-1 print-only:mt-0 ${deductLeave > 0 ? 'text-red-500' : 'text-slate-400'}">${deductLeave > 0 ? '-' + deductLeave.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}</div>
+                        </td>
+                        <td class="px-4 py-3 whitespace-nowrap text-right font-bold text-slate-800 bg-slate-100/30">
+                           <span class="${subTotal < 0 ? 'text-red-500' : ''}">${subTotal < 0 ? `(${Math.abs(subTotal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : subTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right">
+                             <div class="no-print-input flex items-center justify-end gap-1">
+                                <input type="text" placeholder="เหตุผล" value="${dNote}" onchange="liveUpdateCommEmp(${idx}, 'deductNote', this.value)"
+                                    class="w-28 text-xs px-2 py-1 bg-slate-50 border border-transparent group-hover:border-slate-200 rounded focus:bg-white focus:border-red-300">
+                                <input type="number" placeholder="0" value="${dAmount || ''}" onchange="liveUpdateCommEmp(${idx}, 'deductAmount', this.value)"
+                                    class="w-16 text-xs px-2 py-1 bg-slate-50 border border-transparent group-hover:border-slate-200 rounded focus:bg-white focus:border-red-300 text-right text-red-600 font-bold">
+                            </div>
+                            <div class="print-only hidden text-xs text-slate-500 text-right w-full">
+                                ${dNote}
+                            </div>
+                        </td>
+                        <td class="px-3 py-3 whitespace-nowrap text-right font-medium text-red-500 border-l border-slate-100">
+                           ${dAmount > 0 ? dAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '-'}
+                        </td>
+                        <td class="px-5 py-3 whitespace-nowrap text-right font-bold text-purple-700 text-lg bg-purple-50/30">
+                             <span class="${finalNet < 0 ? 'text-red-600' : ''}">${finalNet < 0 ? `(${Math.abs(finalNet).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : finalNet.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            // Update Totals
+            document.getElementById('sum-comm').innerText = sums.comm.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('sum-tenure').innerText = sums.tenure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('sum-late').innerText = sums.late.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            document.getElementById('sum-leave').innerText = sums.leave.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            let stD = document.getElementById('sum-total');
+            stD.innerText = sums.total < 0 ? `(${Math.abs(sums.total).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : sums.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            stD.className = `px-4 py-4 text-right text-base bg-slate-100/50 ${sums.total < 0 ? 'text-red-600' : 'text-slate-900'}`;
+
+            document.getElementById('sum-deduct').innerText = sums.deduct.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            let sfD = document.getElementById('sum-final');
+            sfD.innerText = sums.final < 0 ? `(${Math.abs(sums.final).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})` : sums.final.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            sfD.className = `px-5 py-4 text-right text-[18px] bg-purple-100/50 shadow-inner ${sums.final < 0 ? 'text-red-700' : 'text-purple-800'}`;
+        }
+
+        window.exportCommissionToExcel = function () {
+            let totalComm = getCalculatedTotalCommission();
+
+            let mulTenure = commConfig.tenureMultiplier !== undefined ? commConfig.tenureMultiplier : 100;
+            let mulLate = commConfig.lateMultiplier !== undefined ? commConfig.lateMultiplier : 200;
+            let mulLeave = commConfig.leaveMultiplier !== undefined ? commConfig.leaveMultiplier : 400;
+
+            let exportData = [
+                ["ระบบการจัดค่าคอมมิชชัน", "", "", "", "", "ยอดขาย", commConfig.totalSales, "เปอร์เซ็นต์", commConfig.percent, "ยอดรวมค่าคอม", totalComm],
+                [""],
+                ["ชื่อ", "ค่าคอม", `อายุงาน (ปีละ ${mulTenure})`, `สาย (หัก ${mulLate})`, `ลา (หัก ${mulLeave})`, "รวม", "หัก (ยอดเงิน)", "หัก (เหตุผล)", "คงเหลือ"]
+            ];
+
+            let sums = { comm: 0, tenure: 0, late: 0, leave: 0, total: 0, deduct: 0, final: 0 };
+
+            savedWagesList.forEach((emp) => {
+                let calcLimit = emp.commLimit > 0 ? emp.commLimit : Infinity;
+                let tYears = emp.tYears || 0;
+                let lTime = emp.lTime || 0;
+                let lvTime = emp.lvTime || 0;
+                let dNote = emp.commDeductNote || '';
+                let dAmount = emp.commDeduct || 0;
+
+                let actComm = Math.min(totalComm, calcLimit);
+                if (totalComm === 0) actComm = 0;
+                let bonus = tYears * mulTenure;
+                let deductLate = lTime * mulLate;
+                let deductLeave = lvTime * mulLeave;
+                let subTotal = actComm + bonus - deductLate - deductLeave;
+                let finalNet = subTotal - dAmount;
+
+                sums.comm += actComm; sums.tenure += bonus; sums.late += deductLate; sums.leave += deductLeave;
+                sums.total += subTotal; sums.deduct += dAmount; sums.final += finalNet;
+
+                exportData.push([
+                    emp.name, actComm, bonus, deductLate, deductLeave, subTotal, dAmount, dNote, finalNet
+                ]);
+            });
+
+            // Total row
+            exportData.push(["รวม", sums.comm, sums.tenure, sums.late, sums.leave, sums.total, sums.deduct, "", sums.final]);
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+            // Set column widths formatting
+            ws['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 25 }, { wch: 15 }];
+
+            XLSX.utils.book_append_sheet(wb, ws, "Commission");
+            XLSX.writeFile(wb, "Commission_Summary.xlsx");
+        }
+
+        // ======================= END COMMISSION LOGIC =======================
+
         window.showDetails = function (empIdx) {
             const emp = window.currentParsedData[empIdx];
             document.getElementById('modalName').innerText = emp.name;
@@ -925,10 +1355,11 @@
         // วันที่สำหรับสั่งพิมพ์
         function updatePrintDate() {
             const dateEl = document.getElementById('printDate');
-            if (dateEl) {
-                const now = new Date();
-                dateEl.innerText = now.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-            }
+            const dateCommEl = document.getElementById('printDateComm');
+            const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+            if (dateEl) dateEl.innerText = nowStr;
+            if (dateCommEl) dateCommEl.innerText = nowStr;
         }
         window.addEventListener('beforeprint', updatePrintDate);
 
