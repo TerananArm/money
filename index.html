@@ -55,12 +55,15 @@
         /* เฉพาะเวลาสั่งพิมพ์ (Print) */
         @media print {
             @page {
-                size: landscape;
-                margin: 10mm;
+                size: A4 landscape;
+                margin: 5mm;
             }
 
             body {
                 background-color: white;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                font-size: 11px !important;
             }
 
             .no-print {
@@ -80,15 +83,33 @@
                 page-break-inside: auto;
             }
 
+            table {
+                width: 100% !important;
+                min-width: 100% !important;
+                table-layout: auto !important;
+                border-collapse: collapse !important;
+            }
+
+            /* scale the entire root to fit the page horizontally if it's too wide */
+            html {
+                zoom: 0.8;
+            }
+
             tr {
-                page-break-inside: avoid;
-                page-break-after: auto;
+                page-break-inside: avoid !important;
+                page-break-after: auto !important;
+            }
+
+            td,
+            th {
+                padding: 4px 6px !important;
+                /* shrink padding on print */
+                word-break: break-word !important;
             }
 
             th {
                 background-color: #f1f5f9 !important;
                 color: #000 !important;
-                -webkit-print-color-adjust: exact;
             }
 
             .no-print-input {
@@ -97,12 +118,6 @@
 
             .print-only {
                 display: block !important;
-            }
-
-            /* Better layout scale for table */
-            table {
-                width: 100% !important;
-                min-width: 100% !important;
             }
         }
 
@@ -1322,6 +1337,8 @@
             let mulLate = commConfig.lateMultiplier !== undefined ? commConfig.lateMultiplier : 200;
             let mulLeave = commConfig.leaveMultiplier !== undefined ? commConfig.leaveMultiplier : 400;
 
+            let gDaysOff = commConfig.daysOff !== undefined ? commConfig.daysOff : 0;
+
             let exportData = [
                 ["ระบบการจัดค่าคอมมิชชัน", "", "", "", "", "ยอดขาย", commConfig.totalSales, "เปอร์เซ็นต์", commConfig.percent, "ยอดรวมค่าคอม", totalComm],
                 [""],
@@ -1342,7 +1359,11 @@
                 if (totalComm === 0) actComm = 0;
                 let bonus = tYears * mulTenure;
                 let deductLate = lTime * mulLate;
-                let deductLeave = lvTime * mulLeave;
+
+                // Sync the export calculation with the UI calculation
+                let adjustedLeaveOccurrences = Math.max(0, lvTime - gDaysOff);
+                let deductLeave = adjustedLeaveOccurrences * mulLeave;
+
                 let subTotal = actComm + bonus - deductLate - deductLeave;
                 let finalNet = subTotal - dAmount;
 
