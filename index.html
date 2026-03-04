@@ -141,6 +141,10 @@
                     class="px-5 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-800 transition-all focus:outline-none">
                     คิดค่าคอม
                 </button>
+                <button onclick="resetSystem()"
+                    class="ml-2 px-4 py-2 text-sm font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all focus:outline-none flex items-center gap-1 border border-red-200">
+                    <i class="fas fa-trash-alt text-xs"></i> ล้างข้อมูล
+                </button>
             </div>
         </div>
     </header>
@@ -491,6 +495,14 @@
         const TARGET_MIN = 30;
         const END_HOUR = 16;
         const END_MIN = 0;
+
+        function resetSystem() {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการเริ่มใหม่และล้างข้อมูลทั้งหมด? (ข้อมูลการตั้งค่าและประวัติพนักงานทั้งหมดที่จัดเก็บไว้จะหายไป)')) {
+                localStorage.removeItem('payrollMasterList');
+                localStorage.removeItem('commissionConfig');
+                location.reload();
+            }
+        }
 
         let savedWagesList = JSON.parse(localStorage.getItem('payrollMasterList'));
         if (!savedWagesList || savedWagesList.length === 0) {
