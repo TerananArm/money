@@ -7,6 +7,7 @@
     <title>ระบบคำนวณเงินเดือน & เวลาทำงาน</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -90,7 +91,6 @@
                 border-collapse: collapse !important;
             }
 
-            /* scale the entire root to fit the page horizontally if it's too wide */
             html {
                 zoom: 0.8;
             }
@@ -103,7 +103,6 @@
             td,
             th {
                 padding: 4px 6px !important;
-                /* shrink padding on print */
                 word-break: break-word !important;
             }
 
@@ -119,9 +118,40 @@
             .print-only {
                 display: block !important;
             }
+
+            /* === Inventory Print Specific === */
+            #inventory-tab .print-full-width table {
+                border: 2px solid #334155 !important;
+            }
+            #inventory-tab .print-full-width th {
+                border: 1px solid #94a3b8 !important;
+                background-color: #e2e8f0 !important;
+                font-weight: 700 !important;
+                text-align: center !important;
+                padding: 6px 8px !important;
+                font-size: 12px !important;
+            }
+            #inventory-tab .print-full-width td {
+                border: 1px solid #cbd5e1 !important;
+                padding: 4px 8px !important;
+                font-size: 11px !important;
+            }
+            #inventory-tab .print-full-width tr:nth-child(even) td {
+                background-color: #f8fafc !important;
+            }
+            #inventory-tab .print-full-width thead {
+                display: table-header-group !important;
+            }
+            #inventory-tab .inv-row-num {
+                display: table-cell !important;
+            }
         }
 
         .print-only {
+            display: none;
+        }
+
+        .inv-row-num {
             display: none;
         }
     </style>
@@ -155,6 +185,10 @@
                 <button onclick="switchTab('commission')" id="tab-btn-commission"
                     class="px-5 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-800 transition-all focus:outline-none">
                     คิดค่าคอม
+                </button>
+                <button onclick="switchTab('inventory')" id="tab-btn-inventory"
+                    class="px-5 py-2 text-sm font-semibold rounded-lg text-slate-600 hover:text-slate-800 transition-all focus:outline-none">
+                    คลังสินค้า
                 </button>
                 <button onclick="resetSystem()"
                     class="ml-2 px-4 py-2 text-sm font-semibold rounded-lg bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 transition-all focus:outline-none flex items-center gap-1 border border-red-200">
@@ -488,6 +522,144 @@
 
         </div><!-- End of Commission Tab -->
 
+        <!-- ======================= INVENTORY TAB ======================= -->
+        <div id="inventory-tab" class="hidden flex-col gap-6">
+
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 no-print transition-all hover:shadow-md">
+                <h2 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm"><i class="fas fa-boxes"></i></span>
+                    นำเข้าไฟล์รายงานสินค้าคงเหลือ (Excel)
+                </h2>
+                <div class="flex flex-col md:flex-row gap-4 items-center bg-slate-50 p-4 rounded-xl border border-slate-100 dashed">
+                    <div class="flex-1 w-full relative">
+                        <input type="file" id="excelFileInventory" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-slate-500
+                        file:mr-4 file:py-2.5 file:px-6
+                        file:rounded-lg file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-600 file:text-white
+                        hover:file:bg-blue-700 hover:file:shadow-md
+                        file:cursor-pointer transition-all
+                        bg-white border border-slate-200 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <button id="processBtnInventory" class="bg-slate-800 hover:bg-slate-900 text-white font-medium py-2.5 px-8 rounded-lg transition-all shadow-sm w-full md:w-auto flex items-center justify-center gap-2 disabled:opacity-70">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>ประมวลผลสต็อก</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-indigo-50 rounded-2xl shadow-sm border border-indigo-200 p-6 no-print transition-all hover:shadow-md">
+                <h2 class="text-base font-bold text-indigo-800 mb-2 flex items-center gap-2">
+                    <span class="bg-indigo-200 text-indigo-800 w-6 h-6 rounded-full flex items-center justify-center text-sm"><i class="fas fa-camera"></i></span>
+                    เติมข้อมูล WH — เลือกวิธีใดวิธีหนึ่ง
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                    <!-- Option A: Excel Upload for WH -->
+                    <div class="bg-white p-4 rounded-xl border border-emerald-200 flex flex-col gap-3">
+                        <h3 class="text-sm font-bold text-emerald-700 flex items-center gap-2"><i class="fas fa-file-excel"></i> วิธีที่ 1: อัปโหลด Excel</h3>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">อัปโหลดไฟล์ Excel ที่มีคอลัมน์ชื่อสินค้า + จำนวน WH</p>
+                        <div class="flex flex-col gap-2">
+                            <input type="file" id="whExcelUpload" accept=".xls,.xlsx,.csv" class="block w-full text-sm text-slate-500
+                            file:mr-3 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-xs file:font-semibold
+                            file:bg-emerald-600 file:text-white
+                            hover:file:bg-emerald-700
+                            file:cursor-pointer transition-all
+                            bg-slate-50 border border-slate-200 rounded-lg shadow-sm focus:outline-none" />
+                            <button id="processWhExcelBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-6 rounded-lg text-sm transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-70">
+                                <i class="fas fa-check-circle"></i> นำเข้าข้อมูล WH
+                            </button>
+                        </div>
+                        <div id="whExcelStatus" class="text-xs font-medium text-slate-500 hidden"></div>
+                    </div>
+                    <!-- Option B: Paste Text -->
+                    <div class="bg-white p-4 rounded-xl border border-amber-200 flex flex-col gap-3">
+                        <h3 class="text-sm font-bold text-amber-700 flex items-center gap-2"><i class="fas fa-keyboard"></i> วิธีที่ 2: พิมพ์/วางข้อมูล</h3>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">พิมพ์หรือวางข้อมูลแบบ: ชื่อย่อ,รายละเอียด,จำนวน (บรรทัดละรายการ)</p>
+                        <textarea id="whTextInput" rows="6" placeholder="700-16 DS,หน้า,2&#10;825-16 DS,หลัง,15&#10;11R 22.5 GR 678,,180&#10;9.5-17.5 DB 500,,8+4"
+                            class="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 resize-y custom-scrollbar"></textarea>
+                        <button id="processWhTextBtn" class="bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 px-6 rounded-lg text-sm transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-70">
+                            <i class="fas fa-check-circle"></i> นำเข้าข้อมูล WH
+                        </button>
+                        <div id="whTextStatus" class="text-xs font-medium text-slate-500 hidden"></div>
+                    </div>
+                    <!-- Option C: Image OCR -->
+                    <div class="bg-white p-4 rounded-xl border border-indigo-200 flex flex-col gap-3">
+                        <h3 class="text-sm font-bold text-indigo-700 flex items-center gap-2"><i class="fas fa-camera"></i> วิธีที่ 3: สแกนรูปภาพ</h3>
+                        <p class="text-[11px] text-slate-500 leading-relaxed">อัปโหลดรูปถ่ายใบเช็คสต็อก AI-OCR จะอ่านชื่อ+ตัวเลขให้</p>
+                        <div class="flex flex-col gap-2">
+                            <input type="file" id="whImageUpload" accept="image/*" multiple class="block w-full text-sm text-slate-500
+                            file:mr-3 file:py-2 file:px-4
+                            file:rounded-lg file:border-0
+                            file:text-xs file:font-semibold
+                            file:bg-indigo-600 file:text-white
+                            hover:file:bg-indigo-700
+                            file:cursor-pointer transition-all
+                            bg-slate-50 border border-slate-200 rounded-lg shadow-sm focus:outline-none" />
+                            <button id="processOcrBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg text-sm transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-70">
+                                <i class="fas fa-magic"></i> สแกนรูปภาพ
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="ocrStatus" class="mt-4 text-sm font-medium text-slate-600 hidden flex-col gap-2"></div>
+            </div>
+            <canvas id="ocrPreprocessCanvas" style="display:none"></canvas>
+
+            <div id="inventoryResult" class="hidden flex-col bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print-full-width min-h-[400px]">
+                <div class="p-5 border-b border-slate-200 bg-white flex flex-wrap justify-between items-center sticky top-0 z-20 gap-4">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <span class="bg-blue-100 text-blue-700 w-6 h-6 rounded-full flex items-center justify-center text-sm no-print"><i class="fas fa-clipboard-check"></i></span>
+                            ตารางเช็คสต็อก
+                        </h2>
+                        <select id="inventoryCategoryFilter" onchange="renderInventoryTable()" class="no-print bg-slate-50 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2 py-1.5 max-w-[200px] cursor-pointer">
+                            <option value="all">ดูทั้งหมด</option>
+                        </select>
+                        <div class="no-print relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                            <input type="text" id="inventorySearchInput" oninput="renderInventoryTable()" placeholder="ค้นหาชื่อสินค้า..." class="pl-8 pr-3 py-1.5 text-sm border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 w-56">
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="exportInventoryToExcel()" class="no-print bg-green-50 border border-green-200 hover:bg-green-100 text-green-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-file-excel"></i> Export Excel
+                        </button>
+                        <button onclick="window.print()" class="no-print bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 py-1.5 px-4 rounded-lg text-sm font-medium transition-colors shadow-sm flex items-center gap-2">
+                            <i class="fas fa-print"></i> พิมพ์เอกสาร
+                        </button>
+                    </div>
+                </div>
+
+                <div class="print-only hidden pt-6 pb-4">
+                    <h2 class="text-2xl font-bold text-center text-slate-800">รายงานเช็คสต็อกสินค้า</h2>
+                    <div class="text-center text-sm text-slate-500 mt-1">พิมพ์เมื่อ: <span id="printDateInv"></span></div>
+                    <div class="text-center font-bold text-slate-700 mt-2" id="printCategoryInv">หมวดหมู่: ทั้งหมด</div>
+                </div>
+
+                <div class="table-container custom-scrollbar flex-1 p-0 m-0 print:overflow-visible">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50 sticky top-0 z-10">
+                            <tr>
+                                <th class="inv-row-num px-3 py-3 text-center font-semibold text-slate-600 whitespace-nowrap w-12">ลำดับ</th>
+                                <th class="px-5 py-3 text-left font-semibold text-slate-600 whitespace-nowrap">ชื่อสินค้า</th>
+                                <th class="px-5 py-3 text-center font-semibold text-slate-600 whitespace-nowrap w-32">จำนวนคงคลัง</th>
+                                <th class="px-5 py-3 text-center font-semibold text-slate-600 whitespace-nowrap w-32 border-l border-slate-200">WH</th>
+                                <th class="px-5 py-3 text-center font-semibold text-slate-600 whitespace-nowrap w-32 border-l border-slate-200">SHOP</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTableBody" class="bg-white divide-y divide-slate-100">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- End of Inventory Tab -->
+
     </main>
 
     <script>
@@ -495,33 +667,37 @@
         function switchTab(tab) {
             const salaryTab = document.getElementById('salary-tab');
             const commTab = document.getElementById('commission-tab');
+            const invTab = document.getElementById('inventory-tab');
             const btnSalary = document.getElementById('tab-btn-salary');
             const btnComm = document.getElementById('tab-btn-commission');
+            const btnInv = document.getElementById('tab-btn-inventory');
+
+            [salaryTab, commTab, invTab].forEach(t => {
+                if(t) t.classList.add('hidden');
+                if(t) t.classList.remove('flex');
+            });
+
+            [btnSalary, btnComm, btnInv].forEach(b => {
+                if(b) b.classList.remove('bg-white', 'text-blue-700', 'shadow-sm');
+                if(b) b.classList.add('text-slate-600', 'hover:text-slate-800');
+            });
 
             if (tab === 'salary') {
                 salaryTab.classList.remove('hidden');
                 salaryTab.classList.add('flex');
-                commTab.classList.add('hidden');
-                commTab.classList.remove('flex');
-
                 btnSalary.classList.add('bg-white', 'text-blue-700', 'shadow-sm');
                 btnSalary.classList.remove('text-slate-600', 'hover:text-slate-800');
-
-                btnComm.classList.remove('bg-white', 'text-blue-700', 'shadow-sm');
-                btnComm.classList.add('text-slate-600', 'hover:text-slate-800');
-            } else {
-                salaryTab.classList.add('hidden');
-                salaryTab.classList.remove('flex');
+            } else if (tab === 'commission') {
                 commTab.classList.remove('hidden');
                 commTab.classList.add('flex');
-
                 btnComm.classList.add('bg-white', 'text-blue-700', 'shadow-sm');
                 btnComm.classList.remove('text-slate-600', 'hover:text-slate-800');
-
-                btnSalary.classList.remove('bg-white', 'text-blue-700', 'shadow-sm');
-                btnSalary.classList.add('text-slate-600', 'hover:text-slate-800');
-
                 renderCommissionTable();
+            } else if (tab === 'inventory') {
+                invTab.classList.remove('hidden');
+                invTab.classList.add('flex');
+                btnInv.classList.add('bg-white', 'text-blue-700', 'shadow-sm');
+                btnInv.classList.remove('text-slate-600', 'hover:text-slate-800');
             }
         }
 
@@ -1390,6 +1566,541 @@
 
         // ======================= END COMMISSION LOGIC =======================
 
+        // ======================= INVENTORY LOGIC =======================
+        let inventoryData = [];
+
+        document.getElementById('processBtnInventory').addEventListener('click', function () {
+            const fileInput = document.getElementById('excelFileInventory');
+            if (!fileInput.files.length) {
+                alert('กรุณาเลือกไฟล์ Excel สำหรับคลังสินค้าก่อนครับ');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            const btn = document.getElementById('processBtnInventory');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> กำลังประมวลผล...';
+            btn.disabled = true;
+
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                try {
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                    // Find header row in (10).xlsx (Skip meta data)
+                    let headerIndex = -1;
+                    let nameCol = -1;
+                    let qtyCol = -1;
+                    for (let i = 0; i < Math.min(rows.length, 15); i++) {
+                        let row = rows[i] || [];
+                        let colIdx = row.findIndex(c => String(c).trim() === 'ชื่อสินค้า');
+                        if (colIdx !== -1) {
+                            headerIndex = i;
+                            nameCol = colIdx;
+                            qtyCol = row.findIndex(c => String(c).trim() === 'จำนวนคงคลัง');
+                            break;
+                        }
+                    }
+
+                    if (headerIndex === -1 || qtyCol === -1) {
+                        alert("ไม่พบโครงสร้างข้อมูลที่ถูกต้อง (ต้องมี 'ชื่อสินค้า' และ 'จำนวนคงคลัง')");
+                        return;
+                    }
+
+                    inventoryData = [];
+
+                    // 26 predefined categories (sorted longest-first for matching)
+                    const CATEGORIES = [
+                        'น้ำยาเติมหม้อน้ำ',
+                        'หน้ายางอัดเย็น',
+                        'ยางเปอร์เซนต์',
+                        'พร้อมโครง อัดเย็น',
+                        'ยางใหม่ โฟล์คลิฟ',
+                        'ยางใหม่ ลบตรา',
+                        'น้ำมันเครื่อง',
+                        'ยางพร้อมโครง',
+                        'ขั้วแบตเตอรี่',
+                        'มอเตอร์ไซค์',
+                        'ยาง+กระทะ',
+                        'ยางใหม่',
+                        'อุปกรณ์',
+                        'น้ำกลั่น',
+                        'Pickup',
+                        'Sedan',
+                        'รถไถ',
+                        'รองคอ',
+                        'Inner',
+                        'เสื้อ',
+                        'น็อต',
+                        'กรอง',
+                        'เพลา',
+                        'เฟือง',
+                        'คิ้ว',
+                        'Rim'
+                    ];
+
+                    function matchCategory(productName) {
+                        // Strip leading "001." style prefix
+                        let cleanName = productName.replace(/^\d{3}\.\s*/, '');
+                        for (let cat of CATEGORIES) {
+                            if (cleanName.startsWith(cat) || cleanName.toLowerCase().startsWith(cat.toLowerCase())) {
+                                return cat;
+                            }
+                        }
+                        return 'อื่นๆ';
+                    }
+
+                    let usedCategories = new Set();
+
+                    for (let i = headerIndex + 1; i < rows.length; i++) {
+                        let row = rows[i];
+                        if (!row || row.length === 0) continue;
+                        let name = String(row[nameCol] || '').trim();
+                        let qty = parseFloat(row[qtyCol]) || 0;
+
+                        if (name && !name.includes('รวมทั้งหมด') && !name.includes('รายงานสินค้าคงเหลือ')) {
+                            let category = matchCategory(name);
+                            usedCategories.add(category);
+
+                            inventoryData.push({
+                                name: name,
+                                qty: qty,
+                                category: category,
+                                wh: '',
+                                shop: ''
+                            });
+                        }
+                    }
+
+                    // Populate category dropdown (only categories that have items)
+                    let catSelect = document.getElementById('inventoryCategoryFilter');
+                    catSelect.innerHTML = '<option value="all">ดูทั้งหมด</option>';
+                    CATEGORIES.forEach(c => {
+                        if (!usedCategories.has(c)) return;
+                        let opt = document.createElement('option');
+                        opt.value = c;
+                        opt.innerText = c;
+                        catSelect.appendChild(opt);
+                    });
+                    if (usedCategories.has('อื่นๆ')) {
+                        let opt = document.createElement('option');
+                        opt.value = 'อื่นๆ';
+                        opt.innerText = 'อื่นๆ';
+                        catSelect.appendChild(opt);
+                    }
+
+                    document.getElementById('inventoryResult').classList.remove('hidden');
+                    document.getElementById('inventoryResult').classList.add('flex');
+                    renderInventoryTable();
+                } catch (err) {
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์');
+                    console.error(err);
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+            tbody.innerHTML = '';
+            const selectedCat = document.getElementById('inventoryCategoryFilter').value;
+            const searchText = (document.getElementById('inventorySearchInput').value || '').trim().toLowerCase();
+            
+            let printCat = document.getElementById('printCategoryInv');
+            if(printCat) printCat.innerText = "หมวดหมู่: " + (selectedCat === 'all' ? "ทั้งหมด" : selectedCat);
+
+            let rowNum = 0;
+            inventoryData.forEach((item, idx) => {
+                if (selectedCat !== 'all' && item.category !== selectedCat) return;
+                if (searchText && !item.name.toLowerCase().includes(searchText)) return;
+                rowNum++;
+
+                let row = `
+                    <tr class="hover:bg-blue-50 transition-colors border-b border-slate-100 print:border-slate-300">
+                        <td class="inv-row-num px-3 py-2 text-center text-xs text-slate-400 font-mono">${rowNum}</td>
+                        <td class="px-5 py-3 text-slate-800 font-medium text-sm">
+                            ${item.name}
+                        </td>
+                        <td class="px-5 py-3 text-center text-blue-700 font-bold bg-blue-50/20 border-x border-slate-100 print:bg-transparent">
+                            ${item.qty}
+                        </td>
+                        <td class="px-5 py-3 text-center border-l border-slate-100">
+                            <input type="text" class="w-full text-center border-b border-transparent focus:border-blue-500 bg-transparent outline-none no-print-input text-slate-700 font-medium hover:bg-slate-50 transition-colors" placeholder="-" value="${item.wh || ''}" onchange="updateInventoryData(${idx}, 'wh', this.value)">
+                            <span class="print-only hidden font-bold text-slate-800">${item.wh || ''}</span>
+                        </td>
+                        <td class="px-5 py-3 text-center border-l border-slate-100">
+                            <input type="text" class="w-full text-center border-b border-transparent focus:border-blue-500 bg-transparent outline-none no-print-input text-slate-700 font-medium hover:bg-slate-50 transition-colors" placeholder="-" value="${item.shop || ''}" onchange="updateInventoryData(${idx}, 'shop', this.value)">
+                            <span class="print-only hidden font-bold text-slate-800">${item.shop || ''}</span>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        window.updateInventoryData = function(idx, field, val) {
+            inventoryData[idx][field] = val;
+            renderInventoryTable();
+        };
+
+        // === WH Text Paste Logic ===
+        document.getElementById('processWhTextBtn').addEventListener('click', function () {
+            if (inventoryData.length === 0) {
+                alert('กรุณาประมวลผลสต็อก Excel ด้านบนก่อนครับ');
+                return;
+            }
+            const text = document.getElementById('whTextInput').value.trim();
+            if (!text) {
+                alert('กรุณาพิมพ์หรือวางข้อมูลก่อนครับ');
+                return;
+            }
+            const statusEl = document.getElementById('whTextStatus');
+            statusEl.classList.remove('hidden');
+
+            const lines = text.split('\n').filter(l => l.trim());
+            let matched = 0;
+            let unmatched = [];
+
+            lines.forEach(line => {
+                // Skip header line
+                if (line.includes('ขนาด') && line.includes('จำนวน')) return;
+
+                let parts = line.split(',').map(p => p.trim());
+                if (parts.length < 2) {
+                    // Try tab separator
+                    parts = line.split('\t').map(p => p.trim());
+                }
+                
+                let searchName = '';
+                let qtyStr = '';
+                
+                if (parts.length >= 3) {
+                    // format: name, detail, qty
+                    searchName = parts[0] + ' ' + parts[1];
+                    qtyStr = parts[2];
+                } else if (parts.length === 2) {
+                    searchName = parts[0];
+                    qtyStr = parts[1];
+                } else {
+                    // Single value - try to split on last number
+                    let m = line.match(/^(.*?)\s+([0-9]+(?:\s*\+\s*[0-9]+)*)\s*$/);
+                    if (m) {
+                        searchName = m[1];
+                        qtyStr = m[2];
+                    }
+                }
+
+                if (!searchName || !qtyStr || qtyStr === '-') return;
+
+                // Evaluate quantity (supports "8+4" = 12)
+                let quantity = 0;
+                try {
+                    let cleanQty = qtyStr.replace(/[^0-9\+\-]/g, '');
+                    if (cleanQty) quantity = Function('"use strict"; return (' + cleanQty + ')')();
+                } catch(e) {}
+
+                if (quantity <= 0) return;
+
+                searchName = searchName.replace(/[\-,]/g, ' ').replace(/\s+/g, ' ').trim();
+                let best = findBestInventoryMatch(searchName);
+                if (best) {
+                    best.wh = quantity;
+                    matched++;
+                } else {
+                    unmatched.push(searchName);
+                }
+            });
+
+            let html = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle mr-1"></i> สำเร็จ! จับคู่ WH ได้ ' + matched + ' รายการ</span>';
+            if (unmatched.length > 0) {
+                html += '<div class="text-[11px] text-orange-600 mt-1">จับคู่ไม่ได้: ' + unmatched.slice(0, 10).join(', ') + '</div>';
+            }
+            statusEl.innerHTML = html;
+            renderInventoryTable();
+        });
+
+        // === WH Excel Upload Logic ===
+        document.getElementById('processWhExcelBtn').addEventListener('click', function () {
+            if (inventoryData.length === 0) {
+                alert('กรุณาประมวลผลสต็อก Excel ด้านบนก่อนครับ');
+                return;
+            }
+            const fileInput = document.getElementById('whExcelUpload');
+            if (!fileInput.files.length) {
+                alert('กรุณาเลือกไฟล์ Excel สำหรับ WH ก่อนครับ');
+                return;
+            }
+            const statusEl = document.getElementById('whExcelStatus');
+            statusEl.classList.remove('hidden');
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> กำลังอ่านไฟล์...';
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+                    let matched = 0;
+                    rows.forEach(row => {
+                        if (!row || row.length < 2) return;
+                        let whName = String(row[0] || '').trim().toLowerCase();
+                        let whQty = parseFloat(row[row.length - 1]);
+                        if (!whName || isNaN(whQty)) return;
+
+                        let best = findBestInventoryMatch(whName);
+                        if (best) {
+                            best.wh = whQty;
+                            matched++;
+                        }
+                    });
+
+                    statusEl.innerHTML = '<span class="text-green-600 font-bold"><i class="fas fa-check-circle mr-1"></i> สำเร็จ! จับคู่ WH ได้ ' + matched + ' รายการ</span>';
+                    renderInventoryTable();
+                } catch (err) {
+                    statusEl.innerHTML = '<span class="text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i> อ่านไฟล์ผิดพลาด</span>';
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(fileInput.files[0]);
+        });
+
+        // === Shared Fuzzy Matching Helpers ===
+        function levenshtein(a, b) {
+            const an = a.length, bn = b.length;
+            if (an === 0) return bn;
+            if (bn === 0) return an;
+            let matrix = Array.from({ length: bn + 1 }, (_, i) => i);
+            for (let j = 1; j <= an; j++) {
+                let prev = j;
+                for (let i = 1; i <= bn; i++) {
+                    let val = (b[i - 1] === a[j - 1]) ? matrix[i - 1] : Math.min(matrix[i - 1], prev, matrix[i]) + 1;
+                    matrix[i - 1] = prev;
+                    prev = val;
+                }
+                matrix[bn] = prev;
+            }
+            return matrix[bn];
+        }
+
+        function normalizeForMatch(str) {
+            return str.toLowerCase().replace(/^\d{3}\.\s*/, '').replace(/[\s\.\-\_\(\)\[\]]+/g, '').trim();
+        }
+
+        function tokenize(str) {
+            return str.toLowerCase().replace(/^\d{3}\.\s*/, '').split(/[\s\.\-\_\(\)\[\]]+/).filter(t => t.length > 0);
+        }
+
+        function findBestInventoryMatch(ocrName) {
+            let ocrNorm = normalizeForMatch(ocrName);
+            let ocrTokens = tokenize(ocrName);
+            if (ocrNorm.length < 3) return null;
+
+            let bestItem = null;
+            let bestScore = 0;
+
+            inventoryData.forEach(item => {
+                let itemNorm = normalizeForMatch(item.name);
+                let itemTokens = tokenize(item.name);
+
+                // Exact substring match
+                if (itemNorm.includes(ocrNorm) || ocrNorm.includes(itemNorm)) {
+                    let s = Math.min(ocrNorm.length, itemNorm.length) / Math.max(ocrNorm.length, itemNorm.length);
+                    if (s > 0.3 && s > bestScore) {
+                        bestScore = s + 0.5;
+                        bestItem = item;
+                    }
+                }
+
+                // Token overlap
+                let matchedTokens = 0;
+                ocrTokens.forEach(ot => {
+                    if (itemTokens.some(it => it === ot || it.includes(ot) || ot.includes(it))) matchedTokens++;
+                });
+                let tokenScore = matchedTokens / Math.max(ocrTokens.length, itemTokens.length);
+                if (tokenScore > bestScore && tokenScore > 0.35) {
+                    bestScore = tokenScore;
+                    bestItem = item;
+                }
+
+                // Levenshtein for short strings
+                if (ocrNorm.length > 3 && ocrNorm.length < 60) {
+                    let dist = levenshtein(ocrNorm, itemNorm);
+                    let maxLen = Math.max(ocrNorm.length, itemNorm.length);
+                    let similarity = 1 - (dist / maxLen);
+                    if (similarity > bestScore && similarity > 0.55) {
+                        bestScore = similarity;
+                        bestItem = item;
+                    }
+                }
+            });
+
+            return bestScore > 0.35 ? bestItem : null;
+        }
+
+        // === Image Pre-processing for OCR ===
+        function preprocessImage(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.getElementById('ocrPreprocessCanvas');
+                    const ctx = canvas.getContext('2d');
+                    // Scale up for better OCR
+                    let scale = Math.max(1, 2000 / Math.max(img.width, img.height));
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Grayscale + high contrast threshold
+                    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    let d = imageData.data;
+                    for (let i = 0; i < d.length; i += 4) {
+                        let gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+                        // Increase contrast
+                        gray = gray < 140 ? 0 : 255;
+                        d[i] = d[i+1] = d[i+2] = gray;
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                    canvas.toBlob(blob => resolve(blob), 'image/png');
+                };
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // === OCR Logic (Improved) ===
+        document.getElementById('processOcrBtn').addEventListener('click', async function () {
+            if (inventoryData.length === 0) {
+                alert('กรุณาประมวลผลสต็อก Excel ด้านบนก่อนครับ เพื่อให้ระบบมีฐานข้อมูลชื่อสินค้าในการจับคู่');
+                return;
+            }
+            
+            const fileInput = document.getElementById('whImageUpload');
+            if (!fileInput.files.length) {
+                alert('กรุณาเลือกรูปภาพก่อนครับ');
+                return;
+            }
+
+            const ocrStatus = document.getElementById('ocrStatus');
+            ocrStatus.classList.remove('hidden');
+            ocrStatus.classList.add('flex');
+            ocrStatus.innerHTML = '<span class="text-indigo-600"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังเตรียมระบบ AI... (โหลด Tesseract ครั้งแรกจะใช้เวลาสักครู่)</span>';
+            this.disabled = true;
+
+            try {
+                const worker = await Tesseract.createWorker('tha+eng', 1, {
+                    logger: m => {
+                        if (m.status === 'recognizing text') {
+                            ocrStatus.innerHTML = `<span class="text-indigo-600"><i class="fas fa-circle-notch fa-spin mr-2"></i> กำลังอ่านข้อความ: ${Math.round(m.progress * 100)}%</span>`;
+                        }
+                    }
+                });
+
+                let updatedCount = 0;
+                let unmatchedLines = [];
+
+                for (let i = 0; i < fileInput.files.length; i++) {
+                    ocrStatus.innerHTML = `<span class="text-indigo-600"><i class="fas fa-spinner fa-spin mr-2"></i> กำลังปรับภาพ+วิเคราะห์รูปที่ ${i+1}/${fileInput.files.length}...</span>`;
+                    const file = fileInput.files[i];
+                    
+                    // Pre-process image for better OCR
+                    const processedBlob = await preprocessImage(file);
+                    const result = await worker.recognize(processedBlob);
+                    const lines = result.data.lines;
+
+                    lines.forEach(line => {
+                        let text = line.text.trim();
+                        if (!text || text.length < 3) return;
+                        
+                        // Parse: product name ... number(s)
+                        let match = text.match(/^(.*?)\s+([0-9OIl]+(?:\s*[\+\-]\s*[0-9OIl]+)*)\s*$/);
+                        
+                        if (match) {
+                            let productNameLine = match[1].trim();
+                            let numberStr = match[2];
+                            
+                            // Clean OCR number errors
+                            numberStr = numberStr.replace(/[Oo]/g, '0').replace(/[Il|]/g, '1');
+                            
+                            let quantity = 0;
+                            try {
+                                let cleanNum = numberStr.replace(/[^0-9\+\-]/g, '');
+                                if (cleanNum) quantity = Function('"use strict"; return (' + cleanNum + ')')();
+                            } catch(e) {}
+                            
+                            if (quantity > 0 && productNameLine.length > 2) {
+                                let bestMatch = findBestInventoryMatch(productNameLine);
+
+                                if (bestMatch) {
+                                    bestMatch.wh = quantity;
+                                    updatedCount++;
+                                } else {
+                                    unmatchedLines.push(text);
+                                }
+                            } else {
+                                unmatchedLines.push(text);
+                            }
+                        }
+                    });
+                }
+                await worker.terminate();
+
+                let statusHtml = `<span class="text-green-600 font-bold"><i class="fas fa-check-circle mr-2"></i> สแกนภาพเสร็จสิ้น! บันทึกข้อมูล WH จำนวน ${updatedCount} รายการ</span>`;
+                if (unmatchedLines.length > 0) {
+                    statusHtml += `<div class="text-[11px] text-orange-600 mt-2 p-2 bg-orange-50 rounded border border-orange-100 max-h-32 overflow-y-auto custom-scrollbar">รายการที่จับคู่ไม่ได้ (ลายมืออ่านยาก/ไม่มีชื่อในฐาน):<br>- ${unmatchedLines.slice(0, 15).join('<br>- ')}${unmatchedLines.length > 15 ? '<br>...' : ''}</div>`;
+                }
+                ocrStatus.innerHTML = statusHtml;
+
+                renderInventoryTable();
+
+            } catch (e) {
+                ocrStatus.innerHTML = `<span class="text-red-500"><i class="fas fa-exclamation-triangle mr-2"></i> เกิดข้อผิดพลาด: ${e.message}</span>`;
+                console.error(e);
+            } finally {
+                this.disabled = false;
+            }
+        });
+
+        window.exportInventoryToExcel = function () {
+            if (inventoryData.length === 0) {
+                alert("ไม่มีข้อมูลสำหรับ Export");
+                return;
+            }
+
+            const selectedCat = document.getElementById('inventoryCategoryFilter').value;
+            const filterName = selectedCat === 'all' ? 'ทั้งหมด' : selectedCat;
+
+            let exportData = [
+                ["รายงานเช็คสต็อกสินค้า"],
+                ["หมวดหมู่:", filterName],
+                [""],
+                ["ชื่อสินค้า", "จำนวนคงคลัง", "WH", "SHOP"]
+            ];
+
+            inventoryData.forEach(item => {
+                if (selectedCat !== 'all' && item.category !== selectedCat) return;
+                exportData.push([item.name, item.qty, item.wh, item.shop]);
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(exportData);
+
+            ws['!cols'] = [{ wch: 50 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+
+            XLSX.utils.book_append_sheet(wb, ws, "Inventory");
+            XLSX.writeFile(wb, "Inventory_Check.xlsx");
+        };
+
+        // ======================= END INVENTORY LOGIC =======================
+
         window.showDetails = function (empIdx) {
             const emp = window.currentParsedData[empIdx];
             document.getElementById('modalName').innerText = emp.name;
@@ -1496,10 +2207,12 @@
         function updatePrintDate() {
             const dateEl = document.getElementById('printDate');
             const dateCommEl = document.getElementById('printDateComm');
+            const dateInvEl = document.getElementById('printDateInv');
             const nowStr = new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
             if (dateEl) dateEl.innerText = nowStr;
             if (dateCommEl) dateCommEl.innerText = nowStr;
+            if (dateInvEl) dateInvEl.innerText = nowStr;
         }
         window.addEventListener('beforeprint', updatePrintDate);
 
